@@ -568,9 +568,9 @@ void populateRhythmicList(std::vector<TDuration>* dList, const Fraction& l, bool
       // but don't split for level 1 syncopation (allow eight-note, quarter, quarter... to cross unstressed beats)
       if (startLevel == endLevel && strongestLevelCrossed == startLevel - 1)
             needToSplit = false;
-      // nor for the next simplest case of level 2 syncopation (allow sixteenth-note, eighth, eighth... to cross unstressed beats)
+      // nor for the next simplest case of level 2 syncopation (allow sixteenthDivision-note, eighth, eighth... to cross unstressed beats)
       if (startLevel == endLevel && strongestLevelCrossed == startLevel - 2) {
-            // but disallow sixteenth-note, quarter, quarter...
+            // but disallow sixteenthDivision-note, quarter, quarter...
             int ticksToNext = nominal.ticksToNextSubbeat(rtickStart, startLevel - 1);
             int ticksPastPrev = nominal.ticksPastSubbeat(rtickStart, startLevel - 1);
             needToSplit = ticksToNext != ticksPastPrev;

@@ -36,6 +36,7 @@
 #include <libmscore/ottava.h>
 #include <libmscore/vibrato.h>
 #include <libmscore/drumset.h>
+#include <libmscore/stafftext.h>
 
 namespace Ms {
 
@@ -195,6 +196,7 @@ class GuitarPro {
       Measure* last_measure   { nullptr };
       int last_tempo          { -1 };
 
+      TripletFillType lastTripletFill {TripletFillType::None};
       QMap<int, QList<GPFermata>*> fermatas;
       std::vector<Ottava*> ottava;
       Hairpin** hairpins;
@@ -405,6 +407,7 @@ class GuitarPro6 : public GuitarPro {
       void readBars(QDomNode* barList, Measure* measure, ClefType oldClefId[], GPPartInfo* partInfo, int measureCounter);
       void readTracks(QDomNode* tracks);
       void readMasterBars(GPPartInfo* partInfo);
+      void readTripletFeel(MasterScore* score, Measure* measure, const QString& tripletFeelType, int stave);
       Fraction rhythmToDuration(QString value);
       Fraction fermataToFraction(int numerator, int denominator);
       QDomNode getNode(const QString& id, QDomNode currentDomNode);

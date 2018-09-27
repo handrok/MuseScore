@@ -2106,6 +2106,7 @@ void GuitarPro6::readMasterBars(GPPartInfo* partInfo)
             for (int stave = 0; stave < staves; stave++) {
                   QDomNode masterBarElement = masterBarElementTemplate;
                   bool first                = true;
+                  bool isTripletFeel = false;
                   while (!masterBarElement.isNull()) {
                         if (first) {
                               if (bars[measureCounter].freeTime /*&& last_counter != measureCounter*/) {
@@ -2295,6 +2296,13 @@ void GuitarPro6::readMasterBars(GPPartInfo* partInfo)
                                     }
                               }
 #endif
+                        if (!masterBarElement.nodeName().compare("TripletFeel"))
+                        {
+                            QString tripletFeelType = masterBarElement.toElement().text();
+                            readTripletFeel(score, measure, tripletFeelType, stave);
+                            isTripletFeel = true;
+                        }
+
                         // we no longer set the key here, the gpbar has the information stored in it
                         if (!masterBarElement.nodeName().compare("Fermatas")) {
                               QDomNode currentFermata = masterBarElement.firstChild();
@@ -2393,6 +2401,8 @@ void GuitarPro6::readMasterBars(GPPartInfo* partInfo)
                         masterBarElement = masterBarElement.nextSibling();
                         first = false;
                         }
+                  if (!isTripletFeel)
+                       readTripletFeel(score, measure, QString("None"), stave);
                   }
             if (bars[measureCounter].section[0].length() || bars[measureCounter].section[1].length()) {
                   Segment* s = measure->getSegment(SegmentType::ChordRest, measure->tick());
@@ -2417,6 +2427,60 @@ void GuitarPro6::readMasterBars(GPPartInfo* partInfo)
             bar++;
             } while (!nextMasterBar.isNull());
       }
+
+//---------------------------------------------------------
+//   readTripletFeel
+//---------------------------------------------------------
+
+void GuitarPro6::readTripletFeel(MasterScore* score, Measure * measure, const QString& tripletFeelType, int stave)
+{
+    Segment* segment = measure->getSegment(SegmentType::ChordRest, measure->tick());
+    TripletFill* tripletFill;
+
+    if (!tripletFeelType.compare("Triplet8th") && lastTripletFill != TripletFillType::Triplet8th)
+    {
+        tripletFill= new TripletFill(score, TripletFillType::Triplet8th);
+        lastTripletFill = TripletFillType::Triplet8th;
+    }
+    else if (!tripletFeelType.compare("Triplet16th") && lastTripletFill != TripletFillType::Triplet16th)
+    {
+        tripletFill= new TripletFill(score, TripletFillType::Triplet16th);
+        lastTripletFill = TripletFillType::Triplet16th;
+    }
+    else if (!tripletFeelType.compare("Dotted8th") && lastTripletFill != TripletFillType::Dotted8th)
+    {
+        tripletFill= new TripletFill(score, TripletFillType::Dotted8th);
+        lastTripletFill = TripletFillType::Dotted8th;
+    }
+    else if (!tripletFeelType.compare("Dotted16th") && lastTripletFill != TripletFillType::Dotted16th)
+    {
+        tripletFill= new TripletFill(score, TripletFillType::Dotted16th);
+        lastTripletFill = TripletFillType::Dotted16th;
+    }
+    else if (!tripletFeelType.compare("Scottish8th") && lastTripletFill != TripletFillType::Scottish8th)
+    {
+        tripletFill= new TripletFill(score, TripletFillType::Scottish8th);
+        lastTripletFill = TripletFillType::Scottish8th;
+    }
+    else if (!tripletFeelType.compare("Scottish16th") && lastTripletFill != TripletFillType::Scottish16th)
+    {
+        tripletFill= new TripletFill(score, TripletFillType::Scottish16th);
+        lastTripletFill = TripletFillType::Scottish16th;
+    }
+    else if (!tripletFeelType.compare("None") && lastTripletFill != TripletFillType::None)
+    {
+        tripletFill= new TripletFill(score, TripletFillType::None);
+        lastTripletFill = TripletFillType::None;
+    }
+    else
+    {
+        return;
+    }
+    
+    tripletFill->setTrack(stave);
+    tripletFill->setParent(segment);
+    score->addElement(tripletFill);
+}
 
 //---------------------------------------------------------
 //   readGpif
