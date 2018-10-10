@@ -1611,6 +1611,57 @@ RepeatMeasure* Measure::cmdInsertRepeatMeasure(int staffIdx)
       }
 
 //---------------------------------------------------------
+//   cmdInsertRepeatMeasure
+//---------------------------------------------------------
+
+DoubleRepeatMeasure* Measure::cmdInsertDoubleRepeatMeasure(int staffIdx)
+      {
+      //
+      // see also cmdDeleteSelection()
+      //
+      score()->select(0, SelectType::SINGLE, 0);
+      for (Segment* s = first(); s; s = s->next()) {
+            if (s->segmentType() & SegmentType::ChordRest) {
+                  int strack = staffIdx * VOICES;
+                  int etrack = strack + VOICES;
+                  for (int track = strack; track < etrack; ++track) {
+                        Element* el = s->element(track);
+                        if (el)
+                              score()->undoRemoveElement(el);
+                        }
+                  }
+            }
+      //
+      // add repeat measure
+      //
+      Segment* seg = undoGetSegment(SegmentType::ChordRest, tick());
+      DoubleRepeatMeasure* rm = new DoubleRepeatMeasure(score());
+      rm->setTrack(staffIdx * VOICES);
+      rm->setParent(seg);
+      rm->setDurationType(TDuration::DurationType::V_MEASURE);
+      rm->setDuration(stretchedLen(score()->staff(staffIdx)));
+      rm->setRepeatType(RepeatMeasureType::FirstOfDouble);
+      
+      Measure* nextMeasure = rm->findMeasureBase()->nextMeasure();
+      if (nextMeasure) {
+            Segment* firstSegment = undoGetSegment(SegmentType::ChordRest, nextMeasure->tick());
+             DoubleRepeatMeasure* rms = new DoubleRepeatMeasure(score());
+             rms->setTrack(staffIdx * VOICES);
+             rms->setParent(seg);
+             rms->setDurationType(TDuration::DurationType::V_MEASURE);
+             rms->setDuration(stretchedLen(score()->staff(staffIdx)));
+             rms->setRepeatType(RepeatMeasureType::SecondOfDouble);
+            }
+
+      score()->undoAddCR(rm, this, tick());
+      for (Element* e : el()) {
+            if (e->isSlur() && e->staffIdx() == staffIdx)
+                  score()->undoRemoveElement(e);
+            }
+      return rm;
+      }
+
+//---------------------------------------------------------
 //   adjustToLen
 //    change actual measure len, adjust elements to
 //    new len
@@ -2625,8 +2676,32 @@ bool Measure::isRepeatMeasure(Staff* staff) const
 
       for (int track = strack; track < etrack; ++track) {
             Element* e = s->element(track);
-            if (e && e->isRepeatMeasure())
+            if (e && e->isRepeatMeasure()) {
                   return true;
+                  }
+            }
+      return false;
+      }
+
+//---------------------------------------------------------
+//   isDoubleRepeatMesure
+//---------------------------------------------------------
+
+bool Measure::isDoubleRepeatMesure(const Staff* staff) const
+      {
+      int staffIdx = staff->idx();
+      int strack   = staffIdx * VOICES;
+      int etrack   = (staffIdx + 1) * VOICES;
+      Segment* s   = first(SegmentType::ChordRest);
+
+      if (s == 0)
+            return false;
+
+      for (int track = strack; track < etrack; ++track) {
+            Element* e = s->element(track);
+            if (e && e->isDoubleRepeatMeasure()) {
+                  return true;
+                  }
             }
       return false;
       }

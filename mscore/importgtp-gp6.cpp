@@ -1900,18 +1900,26 @@ void GuitarPro6::readBars(QDomNode* barList, Measure* measure, ClefType oldClefI
                         }
                   // a repeated bar (simile marking)
                   else if (!currentNode.nodeName().compare("SimileMark")) {
-                        if (!currentNode.toElement().text().compare("Simple") ||
-                           !currentNode.toElement().text().compare("FirstOfDouble") ||
-                           !currentNode.toElement().text().compare("SecondOfDouble")) {
-                              RepeatMeasure* rm = new RepeatMeasure(score);
-                              rm->setTrack(staffIdx * VOICES);
-                              rm->setDuration(measure->len());
-                              rm->setDurationType(TDuration::DurationType::V_MEASURE);
-                              Segment* segment = measure->getSegment(SegmentType::ChordRest, tick);
-                              segment->add(rm);
-                              }
-                        else
-                              qDebug() << "WARNING: unhandle similie mark type: " << currentNode.toElement().text();
+                        QString repeatMeasureType = currentNode.toElement().text();
+                        if (repeatMeasureType != "Simple"
+                            && repeatMeasureType != "FirstOfDouble"
+                            && repeatMeasureType != "SecondOfDouble")
+                            {
+                                qDebug() << "WARNING: unhandle similie mark type: "
+                                            << currentNode.toElement().text();
+                                continue;
+                            }
+
+                        auto rtFromString = [](const QString& str) -> RepeatMeasureType {
+                              if (str == "Simple") return RepeatMeasureType::Simple;
+                              if (str == "FirstOfDouble") return RepeatMeasureType::FirstOfDouble;
+                              return RepeatMeasureType::SecondOfDouble;//beacause we check 
+                                                                       //all other variants before
+                              };
+
+                        RepeatMeasureType type = rtFromString(repeatMeasureType);
+                        Ms::RepeatMeasure* rm = measure->cmdInsertRepeatMeasure(staffIdx);
+                        rm->setRepeatType(type);
                         }
                   // new voice specification
                   else if (!currentNode.nodeName().compare("Voices")) {

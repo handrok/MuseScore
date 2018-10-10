@@ -49,6 +49,7 @@ enum class ElementType {
       REST,
       BREATH,
       REPEAT_MEASURE,
+      DOUBLE_REPEAT_MEASURE,
       TIE,
       ARTICULATION,
       FERMATA,

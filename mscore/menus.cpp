@@ -433,6 +433,9 @@ Palette* MuseScore::newRepeatsPalette()
       RepeatMeasure* rm = new RepeatMeasure(gscore);
       sp->append(rm, tr("Repeat measure sign"));
 
+      DoubleRepeatMeasure* drm = new DoubleRepeatMeasure(gscore);
+      sp->append(drm, tr("Double Repeat measure sign"));
+
       for (int i = 0; i < markerTypeTableSize(); i++) {
             if(markerTypeTable[i].type == Marker::Type::CODETTA) //not in smufl
                   continue;

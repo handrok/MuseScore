@@ -52,6 +52,7 @@ static const ElementName elementNames[] = {
       { ElementType::REST,                 "Rest",                 QT_TRANSLATE_NOOP("elementName", "Rest") },
       { ElementType::BREATH,               "Breath",               QT_TRANSLATE_NOOP("elementName", "Breath") },
       { ElementType::REPEAT_MEASURE,       "RepeatMeasure",        QT_TRANSLATE_NOOP("elementName", "Repeat Measure") },
+      { ElementType::DOUBLE_REPEAT_MEASURE,"DoubleRepeatMeasure",  QT_TRANSLATE_NOOP("elementName", "Double Repeat Measure") },
       { ElementType::TIE,                  "Tie",                  QT_TRANSLATE_NOOP("elementName", "Tie") },
       { ElementType::ARTICULATION,         "Articulation",         QT_TRANSLATE_NOOP("elementName", "Articulation") },
       { ElementType::FERMATA,              "Fermata",              QT_TRANSLATE_NOOP("elementName", "Fermata") },

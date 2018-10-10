@@ -298,6 +298,7 @@ class ScoreElement {
       CONVERT(Bend,          BEND)
       CONVERT(TremoloBar,    TREMOLOBAR)
       CONVERT(RepeatMeasure, REPEAT_MEASURE)
+      CONVERT(DoubleRepeatMeasure, DOUBLE_REPEAT_MEASURE)
       CONVERT(Tuplet,        TUPLET)
       CONVERT(NoteDot,       NOTEDOT)
       CONVERT(Dynamic,       DYNAMIC)

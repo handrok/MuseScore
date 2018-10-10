@@ -41,6 +41,7 @@ class AccidentalState;
 class Spanner;
 class Part;
 class RepeatMeasure;
+class DoubleRepeatMeasure;
 
 class MStaff;
 
@@ -206,6 +207,7 @@ class Measure final : public MeasureBase {
       void setEndBarLineType(BarLineType val, int track, bool visible = true, QColor color = QColor());
 
       RepeatMeasure* cmdInsertRepeatMeasure(int staffIdx);
+      DoubleRepeatMeasure* cmdInsertDoubleRepeatMeasure(int staffIdx);
 
       virtual void scanElements(void* data, void (*func)(void*, Element*), bool all=true) override;
       void createVoice(int track);
@@ -219,6 +221,7 @@ class Measure final : public MeasureBase {
       bool isMeasureRest(int staffIdx) const;
       bool isFullMeasureRest() const;
       bool isRepeatMeasure(Staff* staff) const;
+      bool isDoubleRepeatMesure(const Staff* staff) const;
       bool visible(int staffIdx) const;
       bool slashStyle(int staffIdx) const;
       bool isFinalMeasureOfSection() const;

@@ -25,8 +25,16 @@ class Segment;
 //   @@ RepeatMeasure
 //---------------------------------------------------------
 
-class RepeatMeasure final : public Rest {
+enum class RepeatMeasureType {
+	Simple,
+	FirstOfDouble,
+	SecondOfDouble
+};
+
+class RepeatMeasure : public Rest {
+   protected:
       QPainterPath path;
+      RepeatMeasureType _repeatType { RepeatMeasureType::Simple };
 
    public:
       RepeatMeasure(Score*);
@@ -39,9 +47,30 @@ class RepeatMeasure final : public Rest {
       virtual Fraction duration() const override;
       Fraction actualDuration() const { return Rest::duration(); }
 
+      void setRepeatType(RepeatMeasureType val) { _repeatType = val; }
+	  RepeatMeasureType getRepeatType() const { return _repeatType; }
+
       virtual QString accessibleInfo() const override;
       };
 
+class DoubleRepeatMeasure final : public RepeatMeasure {
+      
+   public:
+      DoubleRepeatMeasure(Score*);
+      DoubleRepeatMeasure &operator=(const DoubleRepeatMeasure&) = delete;
+      virtual DoubleRepeatMeasure* clone() const override   { return new DoubleRepeatMeasure(*this); }
+      virtual Element* linkedClone() override         { return Element::linkedClone(); }
+      virtual ElementType type() const override       { return ElementType::DOUBLE_REPEAT_MEASURE; }
+//      virtual void draw(QPainter*) const override;
+      virtual void layout() override;
+//      virtual Fraction duration() const override;
+//      Fraction actualDuration() const { return Rest::duration(); }
+
+      void setRepeatType(RepeatMeasureType val) { _repeatType = val; }
+	  RepeatMeasureType getRepeatType() const { return _repeatType; }
+
+//      virtual QString accessibleInfo() const override;
+      };
 
 }     // namespace Ms
 #endif
