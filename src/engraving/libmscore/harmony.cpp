@@ -2171,7 +2171,7 @@ QString Harmony::generateScreenReaderInfo() const
         aux = aux.replace("#", QObject::tr("♯")).replace("<", "");
         QString extension = "";
 
-        for (QString s : aux.split(">", Qt::SkipEmptyParts)) {
+        for (QString s : aux.split(">", QString::SkipEmptyParts)) {
             if (!s.contains("blues")) {
                 s.replace("b", QObject::tr("♭"));
             }

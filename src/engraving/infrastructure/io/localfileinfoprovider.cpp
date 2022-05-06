@@ -48,7 +48,7 @@ io::path LocalFileInfoProvider::absoluteDirPath() const
 
 QDateTime LocalFileInfoProvider::birthTime() const
 {
-    return QFileInfo(m_path.toQString()).birthTime();
+    return QDateTime();
 }
 
 QDateTime LocalFileInfoProvider::lastModified() const

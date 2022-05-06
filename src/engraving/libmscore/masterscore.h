@@ -76,7 +76,7 @@ public:
 
 class MasterScore : public Score
 {
-    Q_OBJECT
+//    Q_OBJECT
     UndoStack * _undoStack = nullptr;
     TimeSigMap* _sigmap;
     TempoMap* _tempomap;

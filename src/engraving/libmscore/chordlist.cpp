@@ -47,7 +47,7 @@ HChord::HChord(const QString& str)
         { "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B" }
     };
     keys = 0;
-    QStringList sl = str.split(" ", Qt::SkipEmptyParts);
+    QStringList sl = str.split(" ", QString::SkipEmptyParts);
     for (const QString& s : qAsConst(sl)) {
         for (int i = 0; i < 12; ++i) {
             if (s == scaleNames[0][i] || s == scaleNames[1][i]) {
@@ -332,10 +332,10 @@ void HChord::add(const std::vector<HDegree>& degreeList)
 static void readRenderList(QString val, std::list<RenderAction>& renderList)
 {
     renderList.clear();
-    QStringList sl = val.split(" ", Qt::SkipEmptyParts);
+    QStringList sl = val.split(" ", QString::SkipEmptyParts);
     for (const QString& s : qAsConst(sl)) {
         if (s.startsWith("m:")) {
-            QStringList ssl = s.split(":", Qt::SkipEmptyParts);
+            QStringList ssl = s.split(":", QString::SkipEmptyParts);
             if (ssl.size() == 3) {
                 // m:x:y
                 RenderAction a;

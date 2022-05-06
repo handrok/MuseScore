@@ -80,7 +80,7 @@ void XmlWriter::writeHeader()
 void XmlWriter::startObject(const QString& s)
 {
     putLevel();
-    *this << '<' << s << '>' << Qt::endl;
+    *this << '<' << s << '>' << endl;
     stack.push_back(s.split(' ')[0]);
 }
 
@@ -106,7 +106,7 @@ void XmlWriter::startObject(const QString& name, const EngravingObject* se, cons
     if (!attributes.isEmpty()) {
         *this << ' ' << attributes;
     }
-    *this << '>' << Qt::endl;
+    *this << '>' << endl;
     stack.push_back(name);
 
     if (_recordElements) {
@@ -122,7 +122,7 @@ void XmlWriter::startObject(const QString& name, const EngravingObject* se, cons
 void XmlWriter::endObject()
 {
     putLevel();
-    *this << "</" << mu::takeLast(stack) << '>' << Qt::endl;
+    *this << "</" << mu::takeLast(stack) << '>' << endl;
 }
 
 //---------------------------------------------------------
@@ -140,7 +140,7 @@ void XmlWriter::tagE(const char* format, ...)
     vsnprintf(buffer, BS, format, args);
     *this << buffer;
     va_end(args);
-    *this << "/>" << Qt::endl;
+    *this << "/>" << endl;
 }
 
 //---------------------------------------------------------
@@ -171,7 +171,7 @@ void XmlWriter::ntag(const char* name)
 
 void XmlWriter::netag(const char* s)
 {
-    *this << "</" << s << '>' << Qt::endl;
+    *this << "</" << s << '>' << endl;
 }
 
 //---------------------------------------------------------
@@ -581,7 +581,7 @@ void XmlWriter::tag(const QString& name, QVariant data)
 void XmlWriter::comment(const QString& text)
 {
     putLevel();
-    *this << "<!-- " << text << " -->" << Qt::endl;
+    *this << "<!-- " << text << " -->" << endl;
 }
 
 //---------------------------------------------------------
@@ -637,7 +637,7 @@ void XmlWriter::dump(int len, const unsigned char* p)
     for (int i = 0; i < len; ++i, ++col) {
         if (col >= 16) {
             setFieldWidth(0);
-            *this << Qt::endl;
+            *this << endl;
             col = 0;
             putLevel();
             setFieldWidth(5);
@@ -645,7 +645,7 @@ void XmlWriter::dump(int len, const unsigned char* p)
         *this << (p[i] & 0xff);
     }
     if (col) {
-        *this << Qt::endl << Qt::dec;
+        *this << endl << dec;
     }
     setFieldWidth(0);
     setIntegerBase(10);

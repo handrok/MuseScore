@@ -126,7 +126,7 @@ QString TConv::toXml(const std::vector<int>& v)
 std::vector<int> TConv::fromXml(const QString& tag, const std::vector<int>& def)
 {
     std::vector<int> list;
-    QStringList sl = tag.split(",", Qt::SkipEmptyParts);
+    QStringList sl = tag.split(",", QString::SkipEmptyParts);
     for (const QString& s : qAsConst(sl)) {
         bool ok = false;
         int i = s.simplified().toInt(&ok);

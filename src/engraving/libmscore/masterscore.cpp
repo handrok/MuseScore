@@ -512,9 +512,9 @@ void MasterScore::setPos(POS pos, Fraction tick)
     // even though tick position might not have changed, layout might have
     // so we should update cursor here
     // however, we must be careful not to call setPos() again while handling posChanged, or recursion results
-    for (Score* s : scoreList()) {
-        emit s->posChanged(pos, unsigned(tick.ticks()));
-    }
+//    for (Score* s : scoreList()) {
+//        emit s->posChanged(pos, unsigned(tick.ticks()));
+//    }
 }
 
 //---------------------------------------------------------

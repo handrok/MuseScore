@@ -223,8 +223,8 @@ void MScore::init()
 void MScore::registerUiTypes()
 {
 #ifdef SCRIPT_INTERFACE
-    qRegisterMetaType<Spanner::Anchor>("Anchor");
-    qRegisterMetaType<SegmentType>("SegmentType");
+//    qRegisterMetaType<Spanner::Anchor>("Anchor");
+//    qRegisterMetaType<SegmentType>("SegmentType");
     qRegisterMetaType<FiguredBassItem::Modifier>("Modifier");
     qRegisterMetaType<FiguredBassItem::Parenthesis>("Parenthesis");
     qRegisterMetaType<FiguredBassItem::ContLine>("ContLine");
@@ -234,7 +234,7 @@ void MScore::registerUiTypes()
     qRegisterMetaType<Jump::Type>("JumpType");
     qRegisterMetaType<Marker::Type>("MarkerType");
     qRegisterMetaType<HairpinType>("HairpinType");
-    qRegisterMetaType<Lyrics::Syllabic>("Syllabic");
+//    qRegisterMetaType<Lyrics::Syllabic>("Syllabic");
 
 #endif
 }

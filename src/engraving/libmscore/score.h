@@ -368,7 +368,7 @@ public:
 typedef std::map<ElementType, std::map<ElementType, double> > PaddingTable;
 class Score : public QObject, public EngravingObject
 {
-    Q_OBJECT
+//    Q_OBJECT
 
     INJECT(engraving, mu::draw::IImageProvider, imageProvider)
 public:
@@ -533,8 +533,8 @@ protected:
     Score(MasterScore*, bool forcePartStyle = true);
     Score(MasterScore*, const MStyle&);
 
-signals:
-    void posChanged(POS, unsigned);
+//signals:
+//    void posChanged(POS, unsigned);
 
 public:
     Score(const Score&) = delete;

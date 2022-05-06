@@ -22,8 +22,7 @@
 
 #include "stafftype.h"
 
-#include <QFile>
-#include <QFileInfo>
+#include <global/io/file.hpp>
 
 #include "draw/fontmetrics.h"
 #include "draw/pen.h"
@@ -1248,16 +1247,24 @@ bool StaffType::readConfigFile(const QString& fileName)
         path = fileName;
     }
 
-    QFileInfo fi(path);
-    QFile f(path);
-
-    if (!fi.exists() || !f.open(QIODevice::ReadOnly)) {
-        MScore::lastError = QObject::tr("Cannot open tablature font description:\n%1\n%2").arg(f.fileName(), f.errorString());
-        qDebug("StaffTypeTablature::readConfigFile failed: <%s>", qPrintable(path));
+//    QFileInfo fi(path);
+//    QFile f(path);
+    xtz::io::File fi(path.toStdString());
+    
+    if (!fi.open(xtz::io::IODevice::ReadOnly)) {
         return false;
     }
 
-    XmlReader e(&f);
+    
+    QByteArray f = fi.readAll().toQByteArrayCopy();
+
+//    if (!fi.exists() || !f.open(QIODevice::ReadOnly)) {
+//        MScore::lastError = QObject::tr("Cannot open tablature font description:\n%1\n%2").arg(f.fileName(), f.errorString());
+//        qDebug("StaffTypeTablature::readConfigFile failed: <%s>", qPrintable(path));
+//        return false;
+//    }
+
+    XmlReader e(f);
     while (e.readNextStartElement()) {
         if (e.name() == "museScore") {
             while (e.readNextStartElement()) {

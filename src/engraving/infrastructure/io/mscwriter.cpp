@@ -383,8 +383,8 @@ bool MscWriter::XmlFileWriter::open(QIODevice* device, const QString& filePath)
     m_stream = new QTextStream(m_device);
 
     // Write header
-    *m_stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" << Qt::endl;
-    *m_stream << "<files>" << Qt::endl;
+    *m_stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" << endl;
+    *m_stream << "<files>" << endl;
 
     return true;
 }
@@ -392,7 +392,7 @@ bool MscWriter::XmlFileWriter::open(QIODevice* device, const QString& filePath)
 void MscWriter::XmlFileWriter::close()
 {
     if (m_stream) {
-        *m_stream << "</files>" << Qt::endl;
+        *m_stream << "</files>" << endl;
         m_stream->flush();
     }
 
@@ -420,11 +420,11 @@ bool MscWriter::XmlFileWriter::addFileData(const QString& fileName, const QByteA
     }
 
     QTextStream& ts = *m_stream;
-    ts << "<file name=\"" << fileName << "\">" << Qt::endl;
+    ts << "<file name=\"" << fileName << "\">" << endl;
     ts << "<![CDATA[";
     ts << data;
-    ts << "]]>" << Qt::endl;
-    ts << "</file>" << Qt::endl;
+    ts << "]]>" << endl;
+    ts << "</file>" << endl;
 
     return true;
 }

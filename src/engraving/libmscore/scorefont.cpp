@@ -21,6 +21,8 @@
  */
 #include "scorefont.h"
 
+#include <global/io/file.hpp>
+
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -32,7 +34,7 @@
 
 #include "mscore.h"
 
-#include "log.h"
+#include "global/log.h"
 
 using namespace Ms;
 using namespace mu;
@@ -128,6 +130,8 @@ void ScoreFont::initScoreFonts()
         }
     }
 
+    fontProvider()->insertSubstitution("Leland",    "Bravura");
+    fontProvider()->insertSubstitution("MScore",    "Bravura");
     fontProvider()->insertSubstitution("Leland Text",    "Bravura Text");
     fontProvider()->insertSubstitution("Bravura Text",   "Leland Text");
     fontProvider()->insertSubstitution("MScore Text",    "Leland Text");
@@ -141,21 +145,37 @@ void ScoreFont::initScoreFonts()
 
 QJsonObject ScoreFont::initGlyphNamesJson()
 {
-    QFile file(":fonts/smufl/glyphnames.json");
-    if (!file.open(QIODevice::ReadOnly)) {
-        LOGE() << "could not open glyph names JSON file.";
+    xtz::io::File fi(":Fonts/smufl/glyphnames.json");
+    if (!fi.open(xtz::io::IODevice::ReadOnly)) {
+        qDebug("ScoreFont: open glyph names file <%s> failed", qPrintable(fi.fileName().c_str()));
         return QJsonObject();
     }
-
-    QJsonParseError error;
-    QJsonObject glyphNamesJson = QJsonDocument::fromJson(file.readAll(), &error).object();
-    file.close();
-
-    if (error.error != QJsonParseError::NoError) {
-        LOGE() << "JSON parse error in glyph names file: " << error.errorString()
-               << " (offset: " << error.offset << ")";
-        return QJsonObject();
-    }
+    
+    xtz::io::ByteArray json = fi.readAll();
+     QJsonParseError error;
+     QJsonObject glyphNamesJson = QJsonDocument::fromJson(json.toQByteArrayNotCopy(), &error).object();
+     if (error.error != QJsonParseError::NoError) {
+         qDebug("Json parse error in <%s>(offset: %d): %s", qPrintable(fi.fileName().c_str()),
+                error.offset, qPrintable(error.errorString()));
+         return QJsonObject();
+     }
+     fi.close();
+    
+//    QFile file(":fonts/smufl/glyphnames.json");
+//    if (!file.open(QIODevice::ReadOnly)) {
+//        LOGE() << "could not open glyph names JSON file.";
+//        return QJsonObject();
+//    }
+//
+//    QJsonParseError error;
+//    QJsonObject glyphNamesJson = QJsonDocument::fromJson(file.readAll(), &error).object();
+//    file.close();
+//
+//    if (error.error != QJsonParseError::NoError) {
+//        LOGE() << "JSON parse error in glyph names file: " << error.errorString()
+//               << " (offset: " << error.offset << ")";
+//        return QJsonObject();
+//    }
 
     return glyphNamesJson;
 }
@@ -222,6 +242,9 @@ const char* ScoreFont::fallbackTextFont()
 
 void ScoreFont::load()
 {
+    qreal size = 20.0 * MScore::pixelRatio;
+    m_font.setPointSizeF(size);
+    
     QString facePath = m_fontPath + m_filename;
     if (-1 == fontProvider()->addApplicationFont(m_family, facePath)) {
         LOGE() << "fatal error: cannot load internal font: " << facePath;
@@ -243,14 +266,23 @@ void ScoreFont::load()
         computeMetrics(sym, code);
     }
 
-    QFile metadataFile(m_fontPath + "metadata.json");
-    if (!metadataFile.open(QIODevice::ReadOnly)) {
+    //    QFile metadataFile(m_fontPath + "metadata.json");
+    //    if (!metadataFile.open(QIODevice::ReadOnly)) {
+    //        LOGE() << "Failed to open glyph metadata file: " << metadataFile.fileName();
+    //        return;
+    //    }
+    
+    m_loaded = true;
+    
+    std::string gg= m_fontPath.toStdString();
+    xtz::io::File metadataFile(m_fontPath.toStdString() + "metadata.json");
+    if (!metadataFile.open(xtz::io::IODevice::ReadOnly)) {
         LOGE() << "Failed to open glyph metadata file: " << metadataFile.fileName();
         return;
     }
-
+    
     QJsonParseError error;
-    QJsonObject metadataJson = QJsonDocument::fromJson(metadataFile.readAll(), &error).object();
+    QJsonObject metadataJson = QJsonDocument::fromJson(metadataFile.readAll().toQByteArrayNotCopy(), &error).object();
     if (error.error != QJsonParseError::NoError) {
         LOGE() << "Json parse error in " << metadataFile.fileName()
                << ", offset " << error.offset << ": " << error.errorString();
@@ -278,7 +310,7 @@ void ScoreFont::loadGlyphsWithAnchors(const QJsonObject& glyphsWithAnchors)
         Sym& sym = this->sym(symId);
         QJsonObject anchors = glyphsWithAnchors.value(symName).toObject();
 
-        static const std::unordered_map<QString, SmuflAnchorId> smuflAnchorIdNames {
+        static const std::unordered_map<std::string, SmuflAnchorId> smuflAnchorIdNames {
             { "stemDownNW", SmuflAnchorId::stemDownNW },
             { "stemUpSE", SmuflAnchorId::stemUpSE },
             { "stemDownSW", SmuflAnchorId::stemDownSW },
@@ -291,7 +323,7 @@ void ScoreFont::loadGlyphsWithAnchors(const QJsonObject& glyphsWithAnchors)
         };
 
         for (const QString& anchorId : anchors.keys()) {
-            auto search = smuflAnchorIdNames.find(anchorId);
+            auto search = smuflAnchorIdNames.find(anchorId.toStdString());
             if (search == smuflAnchorIdNames.cend()) {
                 //LOGD() << "Unhandled SMuFL anchorId: " << anchorId;
                 continue;
@@ -509,11 +541,11 @@ void ScoreFont::loadStylisticAlternates(const QJsonObject& glyphsWithAlternatesO
 
             // locate the relevant altKey in alternate array
             const QJsonArray::const_iterator alternateIt
-                = std::find_if(alternatesArray.cbegin(), alternatesArray.cend(), [&glyph](const QJsonValue& value) {
+                = std::find_if(alternatesArray.begin(), alternatesArray.end(), [&glyph](const QJsonValue& value) {
                 return value.toObject().value("name") == glyph.alternateKey;
             });
 
-            if (alternateIt != alternatesArray.cend()) {
+            if (alternateIt != alternatesArray.end()) {
                 Sym& sym = this->sym(glyph.alternateSymId);
                 uint code = alternateIt->toObject().value("codepoint").toString().midRef(2).toUInt(&ok, 16);
                 if (ok) {

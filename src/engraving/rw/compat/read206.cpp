@@ -2021,7 +2021,7 @@ static void readVolta206(XmlReader& e, const ReadContext& ctx, Volta* volta)
         const QStringRef& tag(e.name());
         if (tag == "endings") {
             QString s = e.readElementText();
-            QStringList sl = s.split(",", Qt::SkipEmptyParts);
+            QStringList sl = s.split(",", QString::SkipEmptyParts);
             volta->endings().clear();
             for (const QString& l : qAsConst(sl)) {
                 int i = l.simplified().toInt();

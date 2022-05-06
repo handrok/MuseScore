@@ -1342,7 +1342,7 @@ void FiguredBass::endEdit(EditData& ed)
     }
 
     // split text into lines and create an item for each line
-    QStringList list = txt.split('\n', Qt::SkipEmptyParts);
+    QStringList list = txt.split('\n', QString::SkipEmptyParts);
     qDeleteAll(items);
     items.clear();
     QString normalizedText = QString();

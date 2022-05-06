@@ -410,7 +410,7 @@ void Lyrics::paste(EditData& ed, const QString& txt)
 {
     MuseScoreView* scoreview = ed.view();
     QString regex = QString("[^\\S") + QChar(0xa0) + QChar(0x202F) + "]+";
-    QStringList sl = txt.split(QRegularExpression(regex), Qt::SkipEmptyParts);
+    QStringList sl = txt.split(QRegularExpression(regex), QString::SkipEmptyParts);
     if (sl.empty()) {
         return;
     }
