@@ -34,7 +34,7 @@
 
 #include "mscore.h"
 
-#include "global/log.h"
+#include "log.h"
 
 using namespace Ms;
 using namespace mu;

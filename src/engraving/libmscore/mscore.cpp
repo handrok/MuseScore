@@ -70,6 +70,10 @@
 
 #include "config.h"
 
+#if defined(Q_OS_IOS)
+extern "C" const char* resourcePath();
+#endif
+
 using namespace mu;
 
 namespace Ms {
@@ -183,7 +187,7 @@ void MScore::init()
     _globalShare = dir.absolutePath() + "/";
 #elif defined(Q_OS_IOS)
     {
-        extern QString resourcePath();
+//        extern const char* resourcePath();
         _globalShare = resourcePath();
     }
 

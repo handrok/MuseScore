@@ -32,7 +32,7 @@
 #include "types/types.h"
 #include "types/symid.h"
 
-#include "framework/global/logstream.h"
+//#include "framework/global/logstream.h"
 
 namespace Ms {
 class Groups;
@@ -425,10 +425,10 @@ private:
 };
 }
 
-inline mu::logger::Stream& operator<<(mu::logger::Stream& s, const mu::engraving::PropertyValue&)
-{
-    s << "property(not implemented log output)";
-    return s;
-}
+//inline mu::logger::Stream& operator<<(mu::logger::Stream& s, const mu::engraving::PropertyValue&)
+//{
+//    s << "property(not implemented log output)";
+//    return s;
+//}
 
 #endif // MU_ENGRAVING_PROPERTYVALUE_H

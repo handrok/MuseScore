@@ -34,6 +34,10 @@
 #include "score.h"
 #include "factory.h"
 
+#if defined(Q_OS_IOS)
+extern "C" const char* resourcePath();
+#endif
+
 using namespace mu;
 using namespace mu::engraving;
 
@@ -1669,7 +1673,7 @@ bool FiguredBass::readConfigFile(const QString& fileName)
     if (fileName == 0 || fileName.isEmpty()) {         // defaults to built-in xml
 #ifdef Q_OS_IOS
         {
-            extern QString resourcePath();
+//            extern const char* resourcePath();
             QString rpath = resourcePath();
             path = rpath + QString("/fonts_figuredbass.xml");
         }

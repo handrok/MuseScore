@@ -77,5 +77,5 @@ set(MODULE_LINK
     qzip
     )
 
-include(${PROJECT_SOURCE_DIR}/build/module.cmake)
+include(SetupModule)
 
