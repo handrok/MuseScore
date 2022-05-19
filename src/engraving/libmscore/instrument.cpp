@@ -43,7 +43,7 @@ using namespace mu;
 using namespace mu::engraving;
 
 namespace Ms {
-//: Channel name for otherwise unamed channels
+//: Channel name for otherwise unnamed channels
 const char* Channel::DEFAULT_NAME = QT_TRANSLATE_NOOP("InstrumentsXML", "normal");
 //: Channel name for the chord symbols playback channel, best keep translation shorter than 11 letters
 const char* Channel::HARMONY_NAME = QT_TRANSLATE_NOOP("InstrumentsXML", "harmony");
@@ -87,7 +87,7 @@ static void midi_event_write(const MidiCoreEvent& e, XmlWriter& xml)
         }
         break;
     default:
-        qDebug("MidiCoreEvent::write: unknown type");
+        LOGD("MidiCoreEvent::write: unknown type");
         break;
     }
 }
@@ -603,7 +603,7 @@ Channel::Channel()
     _solo     = false;
     _soloMute = false;
 
-//      qDebug("construct Channel ");
+//      LOGD("construct Channel ");
 }
 
 //---------------------------------------------------------
@@ -999,7 +999,7 @@ void Channel::switchExpressive(Synthesizer* synth, bool expressive, bool force /
 //    }
 //    const auto& info = fontsInfo.front();
 //    if (!info.fontName.contains("MuseScore_General", Qt::CaseInsensitive)) {
-//        qDebug().nospace() << "Soundfont '" << info.fontName << "' is not MuseScore General, cannot update expressive";
+//        LOGD().nospace() << "Soundfont '" << info.fontName << "' is not MuseScore General, cannot update expressive";
 //        return;
 //    }
 
@@ -1346,21 +1346,33 @@ void Instrument::switchExpressive(MasterScore* score, Synthesizer* synth, bool e
 
 bool Instrument::operator==(const Instrument& i) const
 {
-    return i._longNames == _longNames
-           && i._shortNames == _shortNames
-           && i._channel == _channel
-           && i._minPitchA == _minPitchA
-           && i._maxPitchA == _maxPitchA
-           && i._minPitchP == _minPitchP
-           && i._maxPitchP == _maxPitchP
-           && i._useDrumset == _useDrumset
-           && i._midiActions == _midiActions
-           && i._articulation == _articulation
-           && i._transpose.diatonic == _transpose.diatonic
-           && i._transpose.chromatic == _transpose.chromatic
-           && i._trackName == _trackName
-           && *i.stringData() == *stringData()
-           && i._singleNoteDynamics == _singleNoteDynamics;
+    bool equal = i._longNames == _longNames;
+    equal &= i._shortNames == _shortNames;
+
+    if (i._channel.size() == _channel.size()) {
+        for (size_t cur = 0; cur < _channel.size(); cur++) {
+            if (*i._channel[cur] != *_channel[cur]) {
+                return false;
+            }
+        }
+    } else {
+        return false;
+    }
+
+    equal &= i._minPitchA == _minPitchA;
+    equal &= i._maxPitchA == _maxPitchA;
+    equal &= i._minPitchP == _minPitchP;
+    equal &= i._maxPitchP == _maxPitchP;
+    equal &= i._useDrumset == _useDrumset;
+    equal &= i._midiActions == _midiActions;
+    equal &= i._articulation == _articulation;
+    equal &= i._transpose.diatonic == _transpose.diatonic;
+    equal &= i._transpose.chromatic == _transpose.chromatic;
+    equal &= i._trackName == _trackName;
+    equal &= *i.stringData() == *stringData();
+    equal &= i._singleNoteDynamics == _singleNoteDynamics;
+
+    return equal;
 }
 
 bool Instrument::operator!=(const Instrument& i) const

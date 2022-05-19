@@ -28,7 +28,6 @@
 #include "changeMap.h"
 
 #include <cmath>
-#include <QDebug>
 
 #include "containers.h"
 
@@ -217,7 +216,7 @@ void ChangeMap::cleanupStage0()
 
         if (int(rampEvents.size()) > 1) {
             // Sort rampEvents so that the longest ramps come first -
-            // this is important for when we remove ramps/fixes enclosed wihtin other
+            // this is important for when we remove ramps/fixes enclosed within other
             // ramps during stage 1.
             std::sort(rampEvents.begin(), rampEvents.end(), ChangeMap::compareRampEvents);
             for (auto& event : rampEvents) {
@@ -444,7 +443,7 @@ void ChangeMap::cleanup()
         return;
     }
 
-    // qDebug() << "Before cleanup:";
+    // LOGD() << "Before cleanup:";
     // dump();
 
     cleanupStage0();
@@ -452,7 +451,7 @@ void ChangeMap::cleanup()
     cleanupStage3();
     cleanedUp = true;
 
-    // qDebug() << "After cleanup:";
+    // LOGD() << "After cleanup:";
     // dump();
 }
 

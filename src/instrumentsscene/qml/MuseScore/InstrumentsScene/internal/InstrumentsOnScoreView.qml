@@ -93,7 +93,7 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
 
-        Dropdown {
+        StyledDropdown {
             id: ordersDropdown
 
             Layout.fillWidth: true
@@ -155,7 +155,7 @@ Item {
             navigation.column: 0
             navigation.accessible.name: itemTitleLabel.text
 
-            onNavigationActived: {
+            onNavigationActivated: {
                 item.clicked(null)
             }
 

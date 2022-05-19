@@ -40,9 +40,6 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/iapplication.h
     ${CMAKE_CURRENT_LIST_DIR}/iinteractive.h
     ${CMAKE_CURRENT_LIST_DIR}/iglobalconfiguration.h
-    ${CMAKE_CURRENT_LIST_DIR}/io/path.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/io/path.h
-    ${CMAKE_CURRENT_LIST_DIR}/io/device.h
     ${CMAKE_CURRENT_LIST_DIR}/log.h
     ${CMAKE_CURRENT_LIST_DIR}/logstream.h
     ${CMAKE_CURRENT_LIST_DIR}/logremover.cpp
@@ -85,6 +82,23 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/sharedmap.h
     ${CMAKE_CURRENT_LIST_DIR}/containers.h
 
+    ${CMAKE_CURRENT_LIST_DIR}/io/path.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/io/path.h
+    ${CMAKE_CURRENT_LIST_DIR}/io/bytearray.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/io/bytearray.h
+    ${CMAKE_CURRENT_LIST_DIR}/io/iodevice.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/io/iodevice.h
+    ${CMAKE_CURRENT_LIST_DIR}/io/file.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/io/file.h
+    ${CMAKE_CURRENT_LIST_DIR}/io/buffer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/io/buffer.h
+    ${CMAKE_CURRENT_LIST_DIR}/io/ifilesystem.h
+    ${CMAKE_CURRENT_LIST_DIR}/io/ioretcodes.h
+
+    ${CMAKE_CURRENT_LIST_DIR}/serialization/xmlstreamreader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/serialization/xmlstreamreader.h
+    ${CMAKE_CURRENT_LIST_DIR}/serialization/xmlstreamwriter.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/serialization/xmlstreamwriter.h
 )
 
 if (NOT NO_GLOBAL_INTERNAL)
@@ -97,6 +111,9 @@ if (NOT NO_GLOBAL_INTERNAL)
         ${CMAKE_CURRENT_LIST_DIR}/internal/globalconfiguration.h
         ${CMAKE_CURRENT_LIST_DIR}/internal/interactive.cpp
         ${CMAKE_CURRENT_LIST_DIR}/internal/interactive.h
+
+        ${CMAKE_CURRENT_LIST_DIR}/io/internal/filesystem.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/io/internal/filesystem.h
         )
 endif()
 

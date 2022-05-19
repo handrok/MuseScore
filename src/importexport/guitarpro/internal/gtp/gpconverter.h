@@ -102,7 +102,7 @@ private:
     void addTapping(const GPNote* gpnote, Note* note);
     void addSlide(const GPNote* gpnote, Note* note);
     void addSingleSlide(const GPNote* gpnote, Note* note);
-    void collectContiniousSlide(const GPNote* gpnote, Note* note);
+    void collectContinuousSlide(const GPNote* gpnote, Note* note);
     void collectHammerOn(const GPNote* gpnote, Note* note);
     void addBend(const GPNote* gpnote, Note* note);
     void addLetRing(const GPNote* gpnote, Note* note);
@@ -129,11 +129,12 @@ private:
     void addPickStroke(const GPBeat* beat, ChordRest* cr);
     void addTremolo(const GPBeat* beat, ChordRest* cr);
     void addWah(const GPBeat* beat, ChordRest* cr);
+    void addGolpe(const GPBeat* beat, ChordRest* cr);
     void addBarre(const GPBeat* beat, ChordRest* cr);
     void addLyrics(const GPBeat* beat, ChordRest* cr, const Context& ctx);
     void clearDefectedGraceChord(ChordRestContainer& graceGhords);
 
-    void addContiniousSlideHammerOn();
+    void addContinuousSlideHammerOn();
     void addFermatas();
     void addTempoMap();
     void fillUncompletedMeasure(const Context& ctx);
@@ -149,7 +150,7 @@ private:
 
     GPMasterBar::TimeSig _lastTimeSig;
     GPMasterBar::TripletFeelType _lastTripletFeel = GPMasterBar::TripletFeelType::None;
-    std::unordered_map<int, GPMasterBar::KeySig> _lastKeySigs;
+    std::unordered_map<size_t, GPMasterBar::KeySig> _lastKeySigs;
     std::list<std::pair<Measure*, GPMasterBar::Fermata> > _fermatas;
     std::unordered_multimap<int, GPMasterTracks::Automation> _tempoMap;
     std::unordered_map<track_idx_t, GPBar::Clef> _clefs;

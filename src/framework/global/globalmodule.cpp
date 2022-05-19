@@ -42,12 +42,15 @@
 
 #include "settings.h"
 
+#include "io/internal/filesystem.h"
+
 #include "diagnostics/idiagnosticspathsregister.h"
 
 #include "config.h"
 
 using namespace mu::framework;
 using namespace mu::modularity;
+using namespace mu::io;
 
 static std::shared_ptr<GlobalConfiguration> s_globalConf = std::make_shared<GlobalConfiguration>();
 
@@ -63,9 +66,10 @@ void GlobalModule::registerExports()
     ioc()->registerExport<IApplication>(moduleName(), new Application());
     ioc()->registerExport<IGlobalConfiguration>(moduleName(), s_globalConf);
     ioc()->registerExport<IInteractive>(moduleName(), new Interactive());
+    ioc()->registerExport<IFileSystem>(moduleName(), new FileSystem());
 }
 
-void GlobalModule::onInit(const IApplication::RunMode&)
+void GlobalModule::onInit(const IApplication::RunMode& mode)
 {
     mu::runtime::mainThreadId(); //! NOTE Needs only call
     mu::runtime::setThreadName("main");
@@ -80,7 +84,9 @@ void GlobalModule::onInit(const IApplication::RunMode&)
     logger->clearDests();
 
     //! Console
-    logger->addDest(new ConsoleLogDest(LogLayout("${time} | ${type|5} | ${thread} | ${tag|10} | ${message}")));
+    if (mode == IApplication::RunMode::Editor) {
+        logger->addDest(new ConsoleLogDest(LogLayout("${time} | ${type|5} | ${thread} | ${tag|10} | ${message}")));
+    }
 
     io::path logPath = s_globalConf->userAppDataPath() + "/logs";
     fileSystem()->makePath(logPath);
@@ -96,7 +102,6 @@ void GlobalModule::onInit(const IApplication::RunMode&)
     FileLogDest* logFile = new FileLogDest(logFilePath.toStdString(),
                                            LogLayout("${datetime} | ${type|5} | ${thread} | ${tag|10} | ${message}"));
 
-    LOGI() << "log path: " << logFile->filePath();
     logger->addDest(logFile);
 
 #ifdef LOGGER_DEBUGLEVEL_ENABLED
@@ -105,14 +110,15 @@ void GlobalModule::onInit(const IApplication::RunMode&)
     logger->setLevel(haw::logger::Normal);
 #endif
 
+    LOGI() << "log path: " << logFile->filePath();
     LOGI() << "=== Started MuseScore " << framework::Version::fullVersion() << ", build number " << BUILD_NUMBER << " ===";
 
     //! --- Setup profiler ---
     using namespace haw::profiler;
     struct MyPrinter : public Profiler::Printer
     {
-        void printDebug(const std::string& str) override { LOG_STREAM(Logger::DEBG, "Profiler") << str; }
-        void printInfo(const std::string& str) override { LOG_STREAM(Logger::INFO, "Profiler") << str; }
+        void printDebug(const std::string& str) override { LOG_STREAM(Logger::DEBG, "Profiler", "")() << str; }
+        void printInfo(const std::string& str) override { LOG_STREAM(Logger::INFO, "Profiler", "")() << str; }
     };
 
     Profiler::Options profOpt;

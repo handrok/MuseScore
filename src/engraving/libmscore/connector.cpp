@@ -22,10 +22,13 @@
 
 #include "connector.h"
 #include "rw/xml.h"
+#include "rw/writecontext.h"
 #include "engravingitem.h"
 #include "score.h"
 #include "engravingobject.h"
 #include "factory.h"
+
+#include "log.h"
 
 using namespace mu;
 using namespace mu::engraving;
@@ -39,7 +42,7 @@ ConnectorInfo::ConnectorInfo(const EngravingItem* current, int track, Fraction f
     : _current(current), _score(current->score()), _currentLoc(Location::absolute())
 {
     if (!current) {
-        qFatal("ConnectorInfo::ConnectorInfo(): invalid argument: %p", current);
+        ASSERT_X(QString::asprintf("ConnectorInfo::ConnectorInfo(): invalid argument: %p", current));
     }
     // It is not always possible to determine the track number correctly from
     // the current element (for example, in case of a Segment).
@@ -201,7 +204,7 @@ ConnectorInfo* ConnectorInfo::findFirst()
     while (i->_prev) {
         i = i->_prev;
         if (i == this) {
-            qWarning("ConnectorInfo::findFirst: circular connector %p", this);
+            LOGW("ConnectorInfo::findFirst: circular connector %p", this);
             return nullptr;
         }
     }
@@ -227,7 +230,7 @@ ConnectorInfo* ConnectorInfo::findLast()
     while (i->_next) {
         i = i->_next;
         if (i == this) {
-            qWarning("ConnectorInfo::findLast: circular connector %p", this);
+            LOGW("ConnectorInfo::findLast: circular connector %p", this);
             return nullptr;
         }
     }
@@ -312,7 +315,7 @@ ConnectorInfoReader::ConnectorInfoReader(XmlReader& e, EngravingItem* current, i
 
 static Location readPositionInfo(const XmlReader& e, int track)
 {
-    Location info = e.location();
+    Location info = e.context()->location();
     info.setTrack(track);
     return info;
 }
@@ -336,11 +339,11 @@ ConnectorInfoWriter::ConnectorInfoWriter(XmlWriter& xml, const EngravingItem* cu
     : ConnectorInfo(current, track, frac), _xml(&xml), _connector(connector)
 {
     if (!connector) {
-        qFatal("ConnectorInfoWriter::ConnectorInfoWriter(): invalid arguments: %p, %p", connector, current);
+        ASSERT_X(QString::asprintf("ConnectorInfoWriter::ConnectorInfoWriter(): invalid arguments: %p, %p", connector, current));
         return;
     }
     _type = connector->type();
-    updateCurrentInfo(xml.clipboardmode());
+    updateCurrentInfo(xml.context()->clipboardmode());
 }
 
 //---------------------------------------------------------
@@ -350,7 +353,7 @@ ConnectorInfoWriter::ConnectorInfoWriter(XmlWriter& xml, const EngravingItem* cu
 void ConnectorInfoWriter::write()
 {
     XmlWriter& xml = *_xml;
-    if (!xml.canWrite(_connector)) {
+    if (!xml.context()->canWrite(_connector)) {
         return;
     }
     xml.startObject(QString("%1 type=\"%2\"").arg(tagName(), _connector->typeName()));
@@ -382,7 +385,7 @@ bool ConnectorInfoReader::read()
     const QString name(e.attribute("type"));
     _type = Factory::name2type(&name);
 
-    e.fillLocation(_currentLoc);
+    e.context()->fillLocation(_currentLoc);
 
     while (e.readNextStartElement()) {
         const QStringRef& tag(e.name());
@@ -395,8 +398,8 @@ bool ConnectorInfoReader::read()
             if (tag == name) {
                 _connector = Factory::createItemByName(tag, _connectorReceiver->score()->dummy());
             } else {
-                qWarning("ConnectorInfoReader::read: element tag (%s) does not match connector type (%s). Is the file corrupted?",
-                         tag.toLatin1().constData(), name.toLatin1().constData());
+                LOGW("ConnectorInfoReader::read: element tag (%s) does not match connector type (%s). Is the file corrupted?",
+                     tag.toLatin1().constData(), name.toLatin1().constData());
             }
 
             if (!_connector) {
@@ -436,7 +439,7 @@ void ConnectorInfoReader::readEndpointLocation(Location& l)
 void ConnectorInfoReader::update()
 {
     if (!currentUpdated()) {
-        updateCurrentInfo(_reader->pasteMode());
+        updateCurrentInfo(_reader->context()->pasteMode());
     }
     if (hasPrevious()) {
         _prevLoc.toAbsolute(_currentLoc);
@@ -472,7 +475,7 @@ void ConnectorInfoReader::readConnector(std::unique_ptr<ConnectorInfoReader> inf
         e.skipCurrentElement();
         return;
     }
-    e.addConnectorInfoLater(std::move(info));
+    e.context()->addConnectorInfoLater(std::move(info));
 }
 
 //---------------------------------------------------------

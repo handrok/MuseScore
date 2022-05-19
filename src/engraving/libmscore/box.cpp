@@ -43,6 +43,8 @@
 #include "measure.h"
 #include "undo.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 using namespace mu::draw;
@@ -287,7 +289,7 @@ bool Box::readProperties(XmlReader& e)
             t = Factory::createText(this);
             t->read(e);
             if (t->empty()) {
-                qDebug("read empty text");
+                LOGD("read empty text");
             } else {
                 add(t);
             }
@@ -301,7 +303,7 @@ bool Box::readProperties(XmlReader& e)
             e.skipCurrentElement();
         } else {
             Image* image = new Image(this);
-            image->setTrack(e.track());
+            image->setTrack(e.context()->track());
             image->read(e);
             add(image);
         }
@@ -531,7 +533,7 @@ bool Box::acceptDrop(EditData& data) const
         return false;
     }
     if (MScore::debugMode) {
-        qDebug("<%s>", data.dropElement->typeName());
+        LOGD("<%s>", data.dropElement->typeName());
     }
     ElementType t = data.dropElement->type();
     switch (t) {
@@ -572,7 +574,7 @@ EngravingItem* Box::drop(EditData& data)
         return 0;
     }
     if (MScore::debugMode) {
-        qDebug("<%s>", e->typeName());
+        LOGD("<%s>", e->typeName());
     }
     switch (e->type()) {
     case ElementType::LAYOUT_BREAK:
@@ -836,7 +838,7 @@ void VBox::layout()
 
 void VBox::adjustLayoutWithoutImages()
 {
-    qreal calcuatedVBoxHeight = 0;
+    qreal calculatedVBoxHeight = 0;
     const int padding = score()->spatium();
     auto elementList = el();
 
@@ -844,11 +846,11 @@ void VBox::adjustLayoutWithoutImages()
         if (pElement->isText()) {
             Text* txt = toText(pElement);
             txt->bbox().moveTop(0);
-            calcuatedVBoxHeight += txt->height() + padding;
+            calculatedVBoxHeight += txt->height() + padding;
         }
     }
 
-    setHeight(calcuatedVBoxHeight);
+    setHeight(calculatedVBoxHeight);
     Box::layout();
 }
 
@@ -888,7 +890,7 @@ void FBox::add(EngravingItem* e)
 //            FretDiagram* fd = toFretDiagram(e);
 //            fd->setFlag(ElementFlag::MOVABLE, false);
     } else {
-        qDebug("FBox::add: element not allowed");
+        LOGD("FBox::add: element not allowed");
         return;
     }
     el().push_back(e);
@@ -914,7 +916,7 @@ QString Box::accessibleExtraInfo() const
 
 QString TBox::accessibleExtraInfo() const
 {
-    QString rez = _text->screenReaderInfo();
+    QString rez = m_text->screenReaderInfo();
     return rez;
 }
 

@@ -132,7 +132,7 @@ void NotationActionController::init()
                    &Controller::isEditingLyrics);
     registerAction("prev-lyric-verse", &Interaction::navigateToLyricsVerse, MoveDirection::Up, PlayMode::NoPlay,
                    &Controller::isEditingLyrics);
-    registerAction("next-syllable", &Interaction::nagivateToNextSyllable, PlayMode::NoPlay, &Controller::isEditingLyrics);
+    registerAction("next-syllable", &Interaction::navigateToNextSyllable, PlayMode::NoPlay, &Controller::isEditingLyrics);
 
     registerAction("add-melisma", &Interaction::addMelisma, PlayMode::NoPlay, &Controller::isEditingLyrics);
     registerAction("add-lyric-verse", &Interaction::addLyricsVerse, PlayMode::NoPlay, &Controller::isEditingLyrics);
@@ -437,7 +437,7 @@ void NotationActionController::init()
     }
 
     for (size_t i = 0; i < Ms::VOICES; ++i) {
-        registerAction("voice-" + std::to_string(i + 1), [this, i]() { changeVoice(i); });
+        registerAction("voice-" + std::to_string(i + 1), [this, i]() { changeVoice(static_cast<int>(i)); });
     }
 
     // TAB

@@ -29,6 +29,7 @@
 
 #include "containers.h"
 #include "rw/xml.h"
+#include "rw/writecontext.h"
 
 #include "mscore.h"
 #include "arpeggio.h"
@@ -580,7 +581,7 @@ void Selection::updateSelectedElements()
     size_t staves = _score->nstaves();
     if (_staffStart == mu::nidx || _staffStart >= staves || _staffEnd == mu::nidx || _staffEnd > staves
         || _staffStart >= _staffEnd) {
-        qDebug("updateSelectedElements: bad staff selection %zu - %zu, staves %zu", _staffStart, _staffEnd, staves);
+        LOGD("updateSelectedElements: bad staff selection %zu - %zu, staves %zu", _staffStart, _staffEnd, staves);
         _staffStart = 0;
         _staffEnd   = 0;
     }
@@ -717,17 +718,17 @@ void Selection::update()
 
 void Selection::dump()
 {
-    qDebug("Selection dump: ");
+    LOGD("Selection dump: ");
     switch (_state) {
-    case SelState::NONE:   qDebug("NONE");
+    case SelState::NONE:   LOGD("NONE");
         return;
-    case SelState::RANGE:  qDebug("RANGE");
+    case SelState::RANGE:  LOGD("RANGE");
         break;
-    case SelState::LIST:   qDebug("LIST");
+    case SelState::LIST:   LOGD("LIST");
         break;
     }
     foreach (const EngravingItem* e, _el) {
-        qDebug("  %p %s", e, e->typeName());
+        LOGD("  %p %s", e, e->typeName());
     }
 }
 
@@ -827,10 +828,10 @@ QByteArray Selection::staffMimeData() const
 {
     QBuffer buffer;
     buffer.open(QIODevice::WriteOnly);
-    XmlWriter xml(score(), &buffer);
+    XmlWriter xml(&buffer);
     xml.writeHeader();
-    xml.setClipboardmode(true);
-    xml.setFilter(selectionFilter());
+    xml.context()->setClipboardmode(true);
+    xml.context()->setFilter(selectionFilter());
 
     Fraction ticks  = tickEnd() - tickStart();
     int staves = static_cast<int>(staffEnd() - staffStart());
@@ -865,13 +866,13 @@ QByteArray Selection::staffMimeData() const
         xml.startObject("voiceOffset");
         for (voice_idx_t voice = 0; voice < VOICES; voice++) {
             if (hasElementInTrack(seg1, seg2, startTrack + voice)
-                && xml.canWriteVoice(voice)) {
+                && xml.context()->canWriteVoice(voice)) {
                 Fraction offset = firstElementInTrack(seg1, seg2, startTrack + voice) - tickStart();
                 xml.tag(QString("voice id=\"%1\"").arg(voice), offset.ticks());
             }
         }
         xml.endObject();     // </voiceOffset>
-        xml.setCurTrack(startTrack);
+        xml.context()->setCurTrack(startTrack);
         _score->writeSegments(xml, startTrack, endTrack, seg1, seg2, false, false);
         xml.endObject();
     }
@@ -890,9 +891,9 @@ QByteArray Selection::symbolListMimeData() const
 
     QBuffer buffer;
     buffer.open(QIODevice::WriteOnly);
-    XmlWriter xml(score(), &buffer);
+    XmlWriter xml(&buffer);
     xml.writeHeader();
-    xml.setClipboardmode(true);
+    xml.context()->setClipboardmode(true);
 
     track_idx_t topTrack    = 1000000;
     track_idx_t bottomTrack = 0;
@@ -1075,7 +1076,7 @@ QByteArray Selection::symbolListMimeData() const
             bool done = false;
             for (; seg; seg = seg->next1()) {
                 if (seg->isChordRestType()) {
-                    // if no ChordRest in right track, look in anotations
+                    // if no ChordRest in right track, look in annotations
                     if (seg->element(currTrack) == nullptr) {
                         foreach (EngravingItem* el, seg->annotations()) {
                             // do annotations include our element?

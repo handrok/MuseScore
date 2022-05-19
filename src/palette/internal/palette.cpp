@@ -41,6 +41,8 @@
 
 #include "palettecell.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::palette;
 using namespace Ms;
@@ -264,7 +266,7 @@ bool Palette::read(XmlReader& e)
             }
         } else if (tag == "visible") {
             m_isVisible = e.readBool();
-        } else if (e.pasteMode() && tag == "expanded") {
+        } else if (e.context()->pasteMode() && tag == "expanded") {
             m_isExpanded = e.readBool();
         } else if (tag == "editable") {
             m_isEditable = e.readBool();
@@ -322,7 +324,7 @@ void Palette::write(XmlWriter& xml) const
     xml.tag("visible", m_isVisible, true);
     xml.tag("editable", m_isEditable, true);
 
-    if (xml.clipboardmode()) {
+    if (xml.context()->clipboardmode()) {
         xml.tag("expanded", m_isExpanded, false);
     }
 
@@ -350,7 +352,7 @@ bool Palette::readFromFile(const QString& p)
 
     MQZipReader f(path);
     if (!f.exists()) {
-        qDebug("palette <%s> not found", qPrintable(path));
+        LOGD("palette <%s> not found", qPrintable(path));
         return false;
     }
     m_cells.clear();
@@ -395,13 +397,12 @@ bool Palette::readFromFile(const QString& p)
     }
 
     if (rootfile.isEmpty()) {
-        qDebug("can't find rootfile in: %s", qPrintable(path));
+        LOGD("can't find rootfile in: %s", qPrintable(path));
         return false;
     }
 
     ba = f.fileData(rootfile);
-    e.clear();
-    e.addData(ba);
+    e.setData(ba);
     while (e.readNextStartElement()) {
         if (e.name() == "museScore") {
             QString version = e.attribute("version");
@@ -453,7 +454,7 @@ bool Palette::writeToFile(const QString& p) const
     }
     QBuffer cbuf;
     cbuf.open(QIODevice::ReadWrite);
-    XmlWriter xml(gpaletteScore, &cbuf);
+    XmlWriter xml(&cbuf);
     xml.writeHeader();
     xml.startObject("container");
     xml.startObject("rootfiles");
@@ -478,7 +479,7 @@ bool Palette::writeToFile(const QString& p) const
     {
         QBuffer cbuf1;
         cbuf1.open(QIODevice::ReadWrite);
-        XmlWriter xml1(gpaletteScore, &cbuf1);
+        XmlWriter xml1(&cbuf1);
         xml1.writeHeader();
         xml1.startObject("museScore version=\"" MSC_VERSION "\"");
         write(xml1);

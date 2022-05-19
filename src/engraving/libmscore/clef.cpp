@@ -42,6 +42,8 @@
 #include "stafftype.h"
 #include "part.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 
@@ -150,8 +152,8 @@ void Clef::layout()
         if (!show) {
             setbbox(RectF());
             symId = SymId::noSym;
-            qDebug("Clef::layout(): invisible clef at tick %d(%d) staff %zu",
-                   segment()->tick().ticks(), segment()->tick().ticks() / 1920, staffIdx());
+            LOGD("Clef::layout(): invisible clef at tick %d(%d) staff %zu",
+                 segment()->tick().ticks(), segment()->tick().ticks() / 1920, staffIdx());
             return;
         }
         lines      = st->lines();             // init values from staff type
@@ -179,7 +181,7 @@ void Clef::layout()
     case ClefType::TAB:                                    // TAB clef
         // on tablature, position clef at half the number of spaces * line distance
         yoff = lineDist * (lines - 1) * .5;
-        stepOffset = 0;           //  ignore stepOffset for TAB and pecussion clefs
+        stepOffset = 0;           //  ignore stepOffset for TAB and percussion clefs
         break;
     case ClefType::TAB4:                                    // TAB clef 4 strings
         // on tablature, position clef at half the number of spaces * line distance
@@ -206,7 +208,7 @@ void Clef::layout()
         break;
     case ClefType::INVALID:
     case ClefType::MAX:
-        qDebug("Clef::layout: invalid type");
+        LOGD("Clef::layout: invalid type");
         return;
     default:
         break;

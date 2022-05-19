@@ -581,6 +581,8 @@ Note::Note(const Note& n, bool link)
     _subchannel        = n._subchannel;
     _line              = n._line;
     _fret              = n._fret;
+    m_harmonicFret     = n.m_harmonicFret;
+    m_displayFret      = n.m_displayFret;
     _string            = n._string;
     _fretConflict      = n._fretConflict;
     _ghost             = n._ghost;
@@ -757,7 +759,7 @@ void Note::setTpcFromPitch()
 void Note::setTpc(int v)
 {
     if (!tpcIsValid(v)) {
-        qFatal("Note::setTpc: bad tpc %d", v);
+        ASSERT_X(QString::asprintf("Note::setTpc: bad tpc %d", v));
     }
     _tpc[concertPitchIdx()] = v;
 }
@@ -898,7 +900,7 @@ SymId Note::noteHead() const
                 if (d) {
                     return d->noteHeads(_pitch, ht);
                 } else {
-                    qDebug("no drumset");
+                    LOGD("no drumset");
                     return noteHead(up, NoteHeadGroup::HEAD_NORMAL, ht);
                 }
             }
@@ -923,7 +925,7 @@ SymId Note::noteHead() const
     }
     SymId t = noteHead(up, _headGroup, ht, tpc(), key, scheme);
     if (t == SymId::noSym) {
-        qDebug("invalid notehead %d/%d", int(_headGroup), int(ht));
+        LOGD("invalid notehead %d/%d", int(_headGroup), int(ht));
         t = noteHead(up, NoteHeadGroup::HEAD_NORMAL, ht);
     }
     return t;
@@ -957,8 +959,12 @@ qreal Note::headBodyWidth() const
 //---------------------------------------------------------
 qreal Note::outsideTieAttachX(bool up) const
 {
-    qreal xo;
+    qreal xo = 0;
 
+    // tab staff notes just use center of bounding box
+    if (staffType()->isTabStaff()) {
+        return x() + ((width() / 2) * mag());
+    }
     // special cases:
     if (_headGroup == NoteHeadGroup::HEAD_SLASH) {
         // the anchors are really close to the stem attach points
@@ -1006,7 +1012,7 @@ void Note::updateHeadGroup(const NoteHeadGroup headGroup)
     NoteHeadGroup group = headGroup;
 
     if (group == NoteHeadGroup::HEAD_INVALID) {
-        qDebug("unknown notehead");
+        LOGD("unknown notehead");
         group = NoteHeadGroup::HEAD_NORMAL;
     }
 
@@ -1069,7 +1075,7 @@ qreal Note::noteheadCenterX() const
 qreal Note::tabHeadWidth(const StaffType* tab) const
 {
     qreal val;
-    if (tab && _fret != INVALID_FRET_INDEX && _string != INVALID_STRING_INDEX) {
+    if (tab && tab->isTabStaff() && _fret != INVALID_FRET_INDEX && _string != INVALID_STRING_INDEX) {
         mu::draw::Font f    = tab->fretFont();
         f.setPointSizeF(tab->fretFontSize());
         val  = mu::draw::FontMetrics::width(f, _fretString) * magS();
@@ -1169,7 +1175,7 @@ void Note::removeSpanner(Spanner* l)
     Note* e = toNote(l->endElement());
     if (e && e->isNote()) {
         if (!e->removeSpannerBack(l)) {
-            qDebug("Note::removeSpanner(%p): cannot remove spannerBack %s %p", this, l->typeName(), l);
+            LOGD("Note::removeSpanner(%p): cannot remove spannerBack %s %p", this, l->typeName(), l);
             // abort();
         }
         if (l->isGlissando()) {
@@ -1177,7 +1183,7 @@ void Note::removeSpanner(Spanner* l)
         }
     }
     if (!removeSpannerFor(l)) {
-        qDebug("Note(%p): cannot remove spannerFor %s %p", this, l->typeName(), l);
+        LOGD("Note(%p): cannot remove spannerFor %s %p", this, l->typeName(), l);
         // abort();
     }
 }
@@ -1223,7 +1229,7 @@ void Note::add(EngravingItem* e)
         addSpanner(toSpanner(e));
         break;
     default:
-        qDebug("Note::add() not impl. %s", e->typeName());
+        LOGD("Note::add() not impl. %s", e->typeName());
         break;
     }
     triggerLayout();
@@ -1248,7 +1254,7 @@ void Note::remove(EngravingItem* e)
     case ElementType::FINGERING:
     case ElementType::BEND:
         if (!_el.remove(e)) {
-            qDebug("Note::remove(): cannot find %s", e->typeName());
+            LOGD("Note::remove(): cannot find %s", e->typeName());
         }
         break;
     case ElementType::TIE: {
@@ -1270,7 +1276,7 @@ void Note::remove(EngravingItem* e)
         break;
 
     default:
-        qDebug("Note::remove() not impl. %s", e->typeName());
+        LOGD("Note::remove() not impl. %s", e->typeName());
         break;
     }
     triggerLayout();
@@ -1312,6 +1318,9 @@ void Note::draw(mu::draw::Painter* painter) const
 
     // tablature
     if (tablature) {
+        if (m_displayFret == DisplayFretOption::Hide) {
+            return;
+        }
         const Staff* st = staff();
         const StaffType* tab = st->staffTypeForElement(this);
         if (tieBack() && !tab->showBackTied()) {
@@ -1484,19 +1493,19 @@ void Note::read(XmlReader& e)
     // including perhaps some we don't know about yet,
     // we will attempt to fix some problems here regardless of version
 
-    if (staff() && !staff()->isDrumStaff(e.tick()) && !e.pasteMode() && !MScore::testMode) {
+    if (staff() && !staff()->isDrumStaff(e.context()->tick()) && !e.context()->pasteMode() && !MScore::testMode) {
         int tpc1Pitch = (tpc2pitch(_tpc[0]) + 12) % 12;
         int tpc2Pitch = (tpc2pitch(_tpc[1]) + 12) % 12;
         int soundingPitch = _pitch % 12;
         if (tpc1Pitch != soundingPitch) {
-            qDebug("bad tpc1 - soundingPitch = %d, tpc1 = %d", soundingPitch, tpc1Pitch);
+            LOGD("bad tpc1 - soundingPitch = %d, tpc1 = %d", soundingPitch, tpc1Pitch);
             _pitch += tpc1Pitch - soundingPitch;
         }
         if (staff()) {
-            Interval v = staff()->part()->instrument(e.tick())->transpose();
+            Interval v = staff()->part()->instrument(e.context()->tick())->transpose();
             int writtenPitch = (_pitch - v.chromatic) % 12;
             if (tpc2Pitch != writtenPitch) {
-                qDebug("bad tpc2 - writtenPitch = %d, tpc2 = %d", writtenPitch, tpc2Pitch);
+                LOGD("bad tpc2 - writtenPitch = %d, tpc2 = %d", writtenPitch, tpc2Pitch);
                 if (concertPitch()) {
                     // assume we want to keep sounding pitch
                     // so fix written pitch (tpc only)
@@ -1743,7 +1752,7 @@ public:
 
         qreal degrees = (qAcos(radians) * 180.0) / M_PI;
 
-        qDebug() << "NOTE DRAG DEGREES " << degrees;
+        LOGD() << "NOTE DRAG DEGREES " << degrees;
 
         if (degrees >= MODE_TRANSITION_LIMIT_DEGREES) {
             return NoteEditData::EditMode_ChangePitch;
@@ -1878,7 +1887,7 @@ EngravingItem* Note::drop(EditData& data)
         NoteHead* s = toNoteHead(e);
         NoteHeadGroup group = s->headGroup();
         if (group == NoteHeadGroup::HEAD_INVALID) {
-            qDebug("unknown notehead");
+            LOGD("unknown notehead");
             group = NoteHeadGroup::HEAD_NORMAL;
         }
         delete s;
@@ -1981,7 +1990,7 @@ EngravingItem* Note::drop(EditData& data)
     {
         for (auto ee : qAsConst(_spannerFor)) {
             if (ee->type() == ElementType::GLISSANDO) {
-                qDebug("there is already a glissando");
+                LOGD("there is already a glissando");
                 delete e;
                 return 0;
             }
@@ -2007,7 +2016,7 @@ EngravingItem* Note::drop(EditData& data)
             gliss->setParent(this);
             score()->undoAddElement(e);
         } else {
-            qDebug("no segment for second note of glissando found");
+            LOGD("no segment for second note of glissando found");
             delete e;
             return 0;
         }
@@ -2169,6 +2178,10 @@ void Note::layout()
 {
     bool useTablature = staff() && staff()->isTabStaff(chord()->tick());
     if (useTablature) {
+        if (m_displayFret == DisplayFretOption::Hide) {
+            return;
+        }
+
         const Staff* st = staff();
         const StaffType* tab = st->staffTypeForElement(this);
         qreal mags = magS();
@@ -2181,13 +2194,15 @@ void Note::layout()
         if (_ghost) {
             parenthesis = true;
         }
-        // not complete but we need systems to be layouted to add parenthesis
+        // not complete but we need systems to be laid out to add parenthesis
         if (_fixed) {
             _fretString = "/";
         } else {
             _fretString = tab->fretString(_fret, _string, _deadNote);
-            if (_harmonic) {
-                _fretString = QString("<%1>").arg(_fretString);
+            if (m_displayFret == DisplayFretOption::ArtificialHarmonic) {
+                _fretString = QString("%1 <%2>").arg(_fretString, QString::number(m_harmonicFret));
+            } else if (m_displayFret == DisplayFretOption::NaturalHarmonic) {
+                _fretString = QString("<%1>").arg(QString::number(m_harmonicFret));
             }
         }
         if (parenthesis) {
@@ -2350,7 +2365,7 @@ void Note::updateAccidental(AccidentalState* as)
         int eRelLine = absStep(tpc(), epitch() + ottaveCapoFret());
         AccidentalVal relLineAccVal = as->accidentalVal(eRelLine, error);
         if (error) {
-            qDebug("error accidentalVal()");
+            LOGD("error accidentalVal()");
             return;
         }
         if ((accVal != relLineAccVal) || hidden() || as->tieContext(eRelLine)) {
@@ -2402,7 +2417,7 @@ void Note::updateAccidental(AccidentalState* as)
     } else {
         // microtonal accidentals playback as naturals
         // in 1.X, they had no effect on accidental state of measure
-        // ultimetely, they should probably get their own state
+        // ultimately, they should probably get their own state
         // for now, at least change state to natural, so subsequent notes playback as might be expected
         // this is an incompatible change, but better to break it for 2.0 than wait until later
         AccidentalVal accVal = Accidental::subtype2value(_accidental->accidentalType());
@@ -2662,7 +2677,7 @@ int Note::playingOctave() const
 //---------------------------------------------------------
 //   customizeVelocity
 //    Input is the global velocity determined by dynamic
-//    signs and crescende/decrescendo etc.
+//    signs and crescendo/decrescendo etc.
 //    Returns the actual play velocity for this note
 //    modified by veloOffset
 //---------------------------------------------------------
@@ -2904,8 +2919,8 @@ void Note::updateRelLine(int relLine, bool undoable)
         staff_idx_t maxStaff = part()->endTrack() / VOICES;
         const Staff* stf = this->staff();
         if (idx < minStaff || idx >= maxStaff || st->group() != stf->staffTypeForElement(this)->group()) {
-            qDebug("staffMove out of scope %zu + %d min %zu max %zu",
-                   staffIdx(), chord()->staffMove(), minStaff, maxStaff);
+            LOGD("staffMove out of scope %zu + %d min %zu max %zu",
+                 staffIdx(), chord()->staffMove(), minStaff, maxStaff);
             chord()->undoChangeProperty(Pid::STAFF_MOVE, 0);
         }
     }

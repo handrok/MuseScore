@@ -1234,7 +1234,7 @@ bool NotationInteraction::drop(const PointF& pos, Qt::KeyboardModifiers modifier
 
                 score()->undoAddElement(m_dropData.ed.dropElement);
             } else {
-                qDebug("cannot drop here");
+                LOGD("cannot drop here");
                 resetDropElement();
             }
         } else {
@@ -1242,7 +1242,7 @@ bool NotationInteraction::drop(const PointF& pos, Qt::KeyboardModifiers modifier
             score()->addRefresh(m_dropData.ed.dropElement->canvasBoundingRect());
 
             if (!el->acceptDrop(m_dropData.ed)) {
-                qDebug("drop %s onto %s not accepted", m_dropData.ed.dropElement->typeName(), el->typeName());
+                LOGD("drop %s onto %s not accepted", m_dropData.ed.dropElement->typeName(), el->typeName());
                 break;
             }
             EngravingItem* dropElement = el->drop(m_dropData.ed);
@@ -1299,7 +1299,7 @@ bool NotationInteraction::drop(const PointF& pos, Qt::KeyboardModifiers modifier
         EngravingItem* el = dropTarget(m_dropData.ed);
         if (!el) {
             if (!dropCanvas(m_dropData.ed.dropElement)) {
-                qDebug("cannot drop %s(%p) to canvas", m_dropData.ed.dropElement->typeName(), m_dropData.ed.dropElement);
+                LOGD("cannot drop %s(%p) to canvas", m_dropData.ed.dropElement->typeName(), m_dropData.ed.dropElement);
                 resetDropElement();
             }
             break;
@@ -1316,7 +1316,11 @@ bool NotationInteraction::drop(const PointF& pos, Qt::KeyboardModifiers modifier
 
         EngravingItem* dropElement = el->drop(m_dropData.ed);
         if (dropElement && dropElement->isInstrumentChange()) {
-            selectInstrument(toInstrumentChange(dropElement));
+            if (!selectInstrument(toInstrumentChange(dropElement))) {
+                rollback();
+                accepted = true;
+                break;
+            }
         }
         score()->addRefresh(el->canvasBoundingRect());
         if (dropElement) {
@@ -1356,19 +1360,21 @@ bool NotationInteraction::drop(const PointF& pos, Qt::KeyboardModifiers modifier
     return accepted;
 }
 
-void NotationInteraction::selectInstrument(Ms::InstrumentChange* instrumentChange)
+bool NotationInteraction::selectInstrument(Ms::InstrumentChange* instrumentChange)
 {
     if (!instrumentChange) {
-        return;
+        return false;
     }
 
     RetVal<Instrument> selectedInstrument = selectInstrumentScenario()->selectInstrument();
     if (!selectedInstrument.ret) {
-        return;
+        return false;
     }
 
     instrumentChange->setInit(true);
     instrumentChange->setupInstrument(&selectedInstrument.val);
+
+    return true;
 }
 
 //! NOTE Copied from Palette::applyPaletteElement
@@ -1462,7 +1468,7 @@ bool NotationInteraction::applyPaletteElement(Ms::EngravingItem* element, Qt::Ke
                 // continue in same track
                 is.setTrack(e->track());
             } else {
-                qDebug("nowhere to place drum note");
+                LOGD("nowhere to place drum note");
             }
         } else if (element->isLayoutBreak()) {
             Ms::LayoutBreak* breakElement = toLayoutBreak(element);
@@ -1675,7 +1681,7 @@ bool NotationInteraction::applyPaletteElement(Ms::EngravingItem* element, Qt::Ke
             }
         }
     } else {
-        qDebug("unknown selection state");
+        LOGD("unknown selection state");
     }
 
     apply();
@@ -1708,7 +1714,7 @@ void NotationInteraction::applyDropPaletteElement(Ms::Score* score, Ms::Engravin
         QByteArray a = e->mimeData(PointF());
 
         Ms::XmlReader n(a);
-        n.setPasteMode(pasteMode);
+        n.context()->setPasteMode(pasteMode);
         Fraction duration;      // dummy
         PointF dragOffset;
         ElementType type = EngravingItem::readType(n, &dragOffset, &duration);
@@ -1719,7 +1725,10 @@ void NotationInteraction::applyDropPaletteElement(Ms::Score* score, Ms::Engravin
 
         Ms::EngravingItem* el = target->drop(*dropData);
         if (el && el->isInstrumentChange()) {
-            selectInstrument(toInstrumentChange(el));
+            if (!selectInstrument(toInstrumentChange(el))) {
+                rollback();
+                return;
+            }
         }
 
         if (el && !score->inputState().noteEntryMode()) {
@@ -2454,7 +2463,7 @@ void NotationInteraction::moveStringSelection(MoveDirection d)
 {
     Ms::InputState& is = score()->inputState();
     Ms::Staff* staff = score()->staff(is.track() / Ms::VOICES);
-    int instrStrgs = staff->part()->instrument(is.tick())->stringData()->strings();
+    int instrStrgs = static_cast<int>(staff->part()->instrument(is.tick())->stringData()->strings());
     int delta = (staff->staffType(is.tick())->upsideDown() ? -1 : 1);
 
     if (MoveDirection::Up == d) {
@@ -2609,7 +2618,7 @@ void NotationInteraction::editText(QInputMethodEvent* event)
     while (n--) {
         if (cursor->movePosition(Ms::TextCursor::MoveOperation::Left)) {
             Ms::TextBlock& curLine = cursor->curLine();
-            curLine.remove(cursor->column(), cursor);
+            curLine.remove(static_cast<int>(cursor->column()), cursor);
             text->triggerLayout();
             text->setTextInvalid();
         }
@@ -3863,7 +3872,7 @@ void NotationInteraction::repeatSelection()
         score()->select(cr, SelectType::RANGE);
     }
     Ms::XmlReader xml(selection.mimeData());
-    xml.setPasteMode(true);
+    xml.context()->setPasteMode(true);
     track_idx_t dStaff = selection.staffStart();
     Ms::Segment* endSegment = selection.endSegment();
 
@@ -4027,7 +4036,7 @@ bool NotationInteraction::elementsSelected(const std::vector<ElementType>& eleme
 void NotationInteraction::navigateToLyrics(bool back, bool moveOnly, bool end)
 {
     if (!m_editData.element || !m_editData.element->isLyrics()) {
-        qWarning("nextLyric called with invalid current element");
+        LOGW("nextLyric called with invalid current element");
         return;
     }
     Ms::Lyrics* lyrics = toLyrics(m_editData.element);
@@ -4079,7 +4088,7 @@ void NotationInteraction::navigateToLyrics(bool back, bool moveOnly, bool end)
 
     ChordRest* cr = toChordRest(nextSegment->element(track));
     if (!cr) {
-        qDebug("no next lyrics list: %s", nextSegment->element(track)->typeName());
+        LOGD("no next lyrics list: %s", nextSegment->element(track)->typeName());
         return;
     }
     Ms::Lyrics* nextLyrics = cr->lyrics(verse, placement);
@@ -4154,10 +4163,10 @@ void NotationInteraction::navigateToLyrics(MoveDirection direction)
     navigateToLyrics(direction == MoveDirection::Left, true, false);
 }
 
-void NotationInteraction::nagivateToNextSyllable()
+void NotationInteraction::navigateToNextSyllable()
 {
     if (!m_editData.element || !m_editData.element->isLyrics()) {
-        qWarning("nextSyllable called with invalid current element");
+        LOGW("nextSyllable called with invalid current element");
         return;
     }
     Ms::Lyrics* lyrics = toLyrics(m_editData.element);
@@ -4253,7 +4262,7 @@ void NotationInteraction::nagivateToNextSyllable()
 void NotationInteraction::navigateToLyricsVerse(MoveDirection direction)
 {
     if (!m_editData.element || !m_editData.element->isLyrics()) {
-        qWarning("nextLyricVerse called with invalid current element");
+        LOGW("nextLyricVerse called with invalid current element");
         return;
     }
     Ms::Lyrics* lyrics = toLyrics(m_editData.element);
@@ -4308,7 +4317,7 @@ void NotationInteraction::navigateToNearHarmony(MoveDirection direction, bool ne
     Ms::Harmony* harmony = editedHarmony();
     Ms::Segment* segment = harmony ? toSegment(harmony->parent()) : nullptr;
     if (!segment) {
-        qDebug("no segment");
+        LOGD("no segment");
         return;
     }
 
@@ -4321,7 +4330,7 @@ void NotationInteraction::navigateToNearHarmony(MoveDirection direction, bool ne
         // previous bar, if any
         measure = measure->prevMeasure();
         if (!measure) {
-            qDebug("no previous measure");
+            LOGD("no previous measure");
             return;
         }
     }
@@ -4348,14 +4357,14 @@ void NotationInteraction::navigateToNearHarmony(MoveDirection direction, bool ne
                 // next bar, if any
                 measure = measure->nextMeasure();
                 if (!measure) {
-                    qDebug("no next measure");
+                    LOGD("no next measure");
                     return;
                 }
             }
 
             segment = Factory::createSegment(measure, Ms::SegmentType::ChordRest, newTick - measure->tick());
             if (!segment) {
-                qDebug("no prev segment");
+                LOGD("no prev segment");
                 return;
             }
             needAddSegment = true;
@@ -4398,7 +4407,7 @@ void NotationInteraction::navigateToHarmonyInNearMeasure(MoveDirection direction
     Ms::Harmony* harmony = editedHarmony();
     Ms::Segment* segment = harmony ? toSegment(harmony->parent()) : nullptr;
     if (!segment) {
-        qDebug("harmonyTicksTab: no segment");
+        LOGD("harmonyTicksTab: no segment");
         return;
     }
 
@@ -4413,13 +4422,13 @@ void NotationInteraction::navigateToHarmonyInNearMeasure(MoveDirection direction
     }
 
     if (!measure) {
-        qDebug("no prev/next measure");
+        LOGD("no prev/next measure");
         return;
     }
 
     segment = measure->findSegment(Ms::SegmentType::ChordRest, measure->tick());
     if (!segment) {
-        qDebug("no ChordRest segment as measure");
+        LOGD("no ChordRest segment as measure");
         return;
     }
 
@@ -4444,7 +4453,7 @@ void NotationInteraction::navigateToHarmony(const Fraction& ticks)
     Ms::Harmony* harmony = editedHarmony();
     Ms::Segment* segment = harmony ? toSegment(harmony->parent()) : nullptr;
     if (!segment) {
-        qDebug("no segment");
+        LOGD("no segment");
         return;
     }
 
@@ -4456,7 +4465,7 @@ void NotationInteraction::navigateToHarmony(const Fraction& ticks)
     while (newTick >= measure->tick() + measure->ticks()) {
         measure = measure->nextMeasure();
         if (!measure) {
-            qDebug("no next measure");
+            LOGD("no next measure");
             return;
         }
     }
@@ -4495,7 +4504,7 @@ void NotationInteraction::navigateToNearFiguredBass(MoveDirection direction)
     bool backDirection = direction == MoveDirection::Left;
 
     if (!segm) {
-        qDebug("figuredBassTab: no segment");
+        LOGD("figuredBassTab: no segment");
         return;
     }
 
@@ -4512,7 +4521,7 @@ void NotationInteraction::navigateToNearFiguredBass(MoveDirection direction)
     }
 
     if (!nextSegm) {
-        qDebug("figuredBassTab: no prev/next segment");
+        LOGD("figuredBassTab: no prev/next segment");
         return;
     }
 
@@ -4536,7 +4545,7 @@ void NotationInteraction::navigateToFiguredBassInNearMeasure(MoveDirection direc
     Ms::Segment* segm = fb->segment();
 
     if (!segm) {
-        qDebug("figuredBassTab: no segment");
+        LOGD("figuredBassTab: no segment");
         return;
     }
 
@@ -4550,13 +4559,13 @@ void NotationInteraction::navigateToFiguredBassInNearMeasure(MoveDirection direc
         }
     }
     if (!meas) {
-        qDebug("figuredBassTab: no prev/next measure");
+        LOGD("figuredBassTab: no prev/next measure");
         return;
     }
     // find initial ChordRest segment
     Ms::Segment* nextSegm = meas->findSegment(Ms::SegmentType::ChordRest, meas->tick());
     if (!nextSegm) {
-        qDebug("figuredBassTab: no ChordRest segment at measure");
+        LOGD("figuredBassTab: no ChordRest segment at measure");
         return;
     }
 
@@ -4580,7 +4589,7 @@ void NotationInteraction::navigateToFiguredBass(const Fraction& ticks)
     track_idx_t track = fb->track();
     Ms::Segment* segm = fb->segment();
     if (!segm) {
-        qDebug("figuredBassTicksTab: no segment");
+        LOGD("figuredBassTicksTab: no segment");
         return;
     }
     Measure* measure = segm->measure();
@@ -4591,7 +4600,7 @@ void NotationInteraction::navigateToFiguredBass(const Fraction& ticks)
     while (nextSegTick >= measure->tick() + measure->ticks()) {
         measure = measure->nextMeasure();
         if (!measure) {
-            qDebug("figuredBassTicksTab: no next measure");
+            LOGD("figuredBassTicksTab: no next measure");
             return;
         }
     }
@@ -4607,7 +4616,7 @@ void NotationInteraction::navigateToFiguredBass(const Fraction& ticks)
     if (!nextSegm || nextSegm->tick() > nextSegTick) {      // no ChordRest segm at this tick
         nextSegm = Factory::createSegment(measure, Ms::SegmentType::ChordRest, nextSegTick - measure->tick());
         if (!nextSegm) {
-            qDebug("figuredBassTicksTab: no next segment");
+            LOGD("figuredBassTicksTab: no next segment");
             return;
         }
         needAddSegment = true;
@@ -4751,7 +4760,7 @@ void NotationInteraction::navigateToNearText(MoveDirection direction)
 void NotationInteraction::addMelisma()
 {
     if (!m_editData.element || !m_editData.element->isLyrics()) {
-        qWarning("addMelisma called with invalid current element");
+        LOGW("addMelisma called with invalid current element");
         return;
     }
     Ms::Lyrics* lyrics = toLyrics(m_editData.element);
@@ -4877,7 +4886,7 @@ void NotationInteraction::addMelisma()
 void NotationInteraction::addLyricsVerse()
 {
     if (!m_editData.element || !m_editData.element->isLyrics()) {
-        qWarning("nextLyricVerse called with invalid current element");
+        LOGW("nextLyricVerse called with invalid current element");
         return;
     }
     Ms::Lyrics* lyrics = toLyrics(m_editData.element);
@@ -4911,7 +4920,7 @@ Ms::Harmony* NotationInteraction::editedHarmony() const
     }
 
     if (!harmony->parent() || !harmony->parent()->isSegment()) {
-        qDebug("no segment parent");
+        LOGD("no segment parent");
         return nullptr;
     }
 
@@ -4962,7 +4971,7 @@ bool NotationInteraction::needEndTextEdit() const
 void NotationInteraction::toggleFontStyle(Ms::FontStyle style)
 {
     if (!m_editData.element || !m_editData.element->isTextBase()) {
-        qWarning("toggleFontStyle called with invalid current element");
+        LOGW("toggleFontStyle called with invalid current element");
         return;
     }
     Ms::TextBase* text = toTextBase(m_editData.element);

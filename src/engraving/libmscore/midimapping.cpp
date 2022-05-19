@@ -20,14 +20,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <QDebug>
-
 #include "score.h"
 #include "excerpt.h"
 #include "instrument.h"
 #include "part.h"
 
 #include "masterscore.h"
+
+#include "log.h"
 
 using namespace mu;
 
@@ -58,7 +58,7 @@ void MasterScore::rebuildMidiMapping()
 
 void MasterScore::checkMidiMapping()
 {
-    isSimpleMidiMaping = true;
+    isSimpleMidiMapping = true;
     rebuildMidiMapping();
 
     std::vector<bool> drum;
@@ -81,7 +81,7 @@ void MasterScore::checkMidiMapping()
         if (drum[index]) {
             lastDrumPort++;
             if (m.port() != lastDrumPort) {
-                isSimpleMidiMaping = false;
+                isSimpleMidiMapping = false;
                 return;
             }
         } else {
@@ -92,7 +92,7 @@ void MasterScore::checkMidiMapping()
             int p = lastChannel / 16;
             int c = lastChannel % 16;
             if (m.port() != p || m.channel() != c) {
-                isSimpleMidiMaping = false;
+                isSimpleMidiMapping = false;
                 return;
             }
         }
@@ -156,7 +156,7 @@ void MasterScore::rebuildExcerptsMidiMapping()
         for (Part* p : ex->excerptScore()->parts()) {
             const Part* masterPart = p->masterPart();
             if (!masterPart->score()->isMaster()) {
-                qWarning() << "rebuildExcerptsMidiMapping: no part in master score is linked with " << p->partName();
+                LOGW() << "rebuildExcerptsMidiMapping: no part in master score is linked with " << p->partName();
                 continue;
             }
             Q_ASSERT(p->instruments().size() == masterPart->instruments().size());
@@ -360,7 +360,7 @@ void MasterScore::updateMidiMapping(Channel* channel, Part* part, int midiPort, 
         return;
     }
     if (c >= int(masterScore()->midiMapping().size())) {
-        qDebug("Can't set midi channel: midiMapping is empty!");
+        LOGD("Can't set midi channel: midiMapping is empty!");
         return;
     }
     MidiMapping& mm = _midiMapping[c];

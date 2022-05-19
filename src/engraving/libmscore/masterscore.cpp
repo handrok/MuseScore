@@ -442,7 +442,7 @@ void MasterScore::removeExcerpt(Excerpt* ex)
         setExcerptsChanged(true);
         // delete ex;
     } else {
-        qDebug("removeExcerpt:: ex not found");
+        LOGD("removeExcerpt:: ex not found");
     }
 }
 
@@ -456,7 +456,7 @@ MasterScore* MasterScore::clone()
     buffer.open(QIODevice::WriteOnly);
 
     WriteContext writeCtx;
-    XmlWriter xml(this, &buffer);
+    XmlWriter xml(&buffer);
     xml.setContext(&writeCtx);
     xml.writeHeader();
 
@@ -512,9 +512,9 @@ void MasterScore::setPos(POS pos, Fraction tick)
     // even though tick position might not have changed, layout might have
     // so we should update cursor here
     // however, we must be careful not to call setPos() again while handling posChanged, or recursion results
-//    for (Score* s : scoreList()) {
-//        emit s->posChanged(pos, unsigned(tick.ticks()));
-//    }
+    for (Score* s : scoreList()) {
+        s->notifyPosChanged(pos, unsigned(tick.ticks()));
+    }
 }
 
 //---------------------------------------------------------

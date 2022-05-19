@@ -232,14 +232,14 @@ void Score::updateChannel()
                 size_t channel = st->channel(c->tick(), c->voice());
                 Instrument* instr = c->part()->instrument(c->tick());
                 if (channel >= instr->channel().size()) {
-                    qDebug() << "Channel " << channel << " too high. Max " << instr->channel().size();
+                    LOGD() << "Channel " << channel << " too high. Max " << instr->channel().size();
                     channel = 0;
                 }
                 for (Note* note : c->notes()) {
                     if (note->hidden()) {
                         continue;
                     }
-                    note->setSubchannel(channel);
+                    note->setSubchannel(static_cast<int>(channel));
                 }
             }
         }
@@ -382,8 +382,8 @@ static void collectNote(EventMap* events, int channel, const Note* note, qreal v
     bool tieBack = note->tieBack();
 
     NoteEventList nel = note->playEvents();
-    int nels = nel.size();
-    for (int i = 0, pitch = note->ppitch(); i < nels; ++i) {
+    size_t nels = nel.size();
+    for (int i = 0, pitch = note->ppitch(); i < static_cast<int>(nels); ++i) {
         const NoteEvent& e = nel[i];     // we make an explicit const ref, not a const copy.  no need to copy as we won't change the original object.
 
         // skip if note has a tie into it and only one NoteEvent
@@ -401,7 +401,7 @@ static void collectNote(EventMap* events, int channel, const Note* note, qreal v
         }
         int on  = tick1 + (ticks * e.ontime()) / 1000;
         int off = on + (ticks * e.len()) / 1000 - 1;
-        if (tieFor && i == nels - 1) {
+        if (tieFor && i == static_cast<int>(nels) - 1) {
             off += tieLen;
         }
 
@@ -808,7 +808,7 @@ void MidiRenderer::collectMeasureEventsDefault(EventMap* events, Measure const* 
     int controller = getControllerFromCC(sctx.cc);
 
     if (controller == -1) {
-        qWarning("controller for CC %d not valid", sctx.cc);
+        LOGW("controller for CC %d not valid", sctx.cc);
         return;
     }
 
@@ -925,7 +925,7 @@ void MidiRenderer::collectMeasureEvents(EventMap* events, Measure const* m, cons
         collectMeasureEventsDefault(events, m, sctx, tickOffset);
         break;
     default:
-        qWarning("Unrecognized dynamics method: %d", int(sctx.method));
+        LOGW("Unrecognized dynamics method: %d", int(sctx.method));
         break;
     }
 
@@ -1433,7 +1433,7 @@ void renderTremolo(Chord* chord, std::vector<NoteEventList>& ell)
                 }
             }
         } else {
-            qDebug("Chord::renderTremolo: cannot find 2. chord");
+            LOGD("Chord::renderTremolo: cannot find 2. chord");
         }
     } else if (chord->tremoloChordType() == TremoloChordType::TremoloSecondNote) {
         for (int k = 0; k < notes; ++k) {
@@ -1546,7 +1546,7 @@ int convertLine(int lineL2, Note* noteL, Note* noteR)
 // noteL is the note to measure the deltastep from, i.e., ornaments are w.r.t. this note
 // noteR is the note to search backward from to find accidentals.
 //    for ornament calculation noteL and noteR are the same, but for glissando they are
-//     the start end end note of glissando.
+//     the start and end note of glissando.
 // deltastep is the desired number of diatonic steps between the base note and this articulation step.
 //---------------------------------------------------------
 
@@ -1847,7 +1847,7 @@ bool renderNoteArticulation(NoteEventList* events, Note* note, bool chromatic, i
 //    body   - notes to play comprising the body of the rendered ornament.
 //            The body differs from the prefix and suffix in several ways.
 //            * body does not support tied notes: {0,0,0,1} means play 4 distinct notes (not tied).
-//            * if there is sufficient duration in the principle note, AND repeatep is true, then body
+//            * if there is sufficient duration in the principle note, AND repeatp is true, then body
 //               will be rendered multiple times, as the duration allows.
 //            * to avoid a time gap (or rest) in rendering the articulation, if sustainp is true,
 //               then the final note of the body will be sustained to fill the left-over time.
@@ -2321,7 +2321,7 @@ void Score::createPlayEvents(Chord* chord)
             break;
         }
     }
-    // gateTime is 100% for slured notes
+    // gateTime is 100% for slurred notes
     if (!slur) {
         Instrument* instr = chord->part()->instrument(tick);
         instr->updateGateTime(&gateTime, 0, "");
@@ -2510,7 +2510,7 @@ void MidiRenderer::renderChunk(const Chunk& chunk, EventMap* events, const Conte
         renderMethod = DynamicsRenderMethod::FIXED_MAX;
         break;
     default:
-        qWarning("Unrecognized dynamics method: %d", method);
+        LOGW("Unrecognized dynamics method: %d", method);
         break;
     }
 

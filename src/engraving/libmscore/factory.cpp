@@ -362,7 +362,7 @@ EngravingItem* Factory::doCreateItem(ElementType type, EngravingItem* parent)
     case ElementType::DUMMY:
         break;
     }
-    qDebug("cannot create type %d <%s>", int(type), Factory::name(type));
+    LOGD("cannot create type %d <%s>", int(type), Factory::name(type));
     return 0;
 }
 
@@ -370,7 +370,7 @@ EngravingItem* Factory::createItemByName(const QStringRef& name, EngravingItem* 
 {
     ElementType type = name2type(name, isAccessibleEnabled);
     if (type == ElementType::INVALID) {
-        LOGE() << "Invalide type: " << name.toString();
+        LOGE() << "Invalid type: " << name.toString();
         return 0;
     }
     return createItem(type, parent, isAccessibleEnabled);

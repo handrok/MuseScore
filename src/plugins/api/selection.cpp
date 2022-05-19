@@ -46,7 +46,7 @@ Selection* selectionWrap(Ms::Selection* select)
 bool Selection::checkSelectionIsNotLocked() const
 {
     if (_select->isLocked()) {
-        qWarning("Cannot change selection: %s", qPrintable(_select->lockReason()));
+        LOGW("Cannot change selection: %s", qPrintable(_select->lockReason()));
         return false;
     }
     return true;
@@ -83,12 +83,12 @@ bool Selection::select(EngravingItem* elWrapper, bool add)
     // Check whether it's safe to select this element:
     // use types list from UndoMacro for now
     if (!Ms::UndoMacro::canRecordSelectedElement(e)) {
-        qWarning("Cannot select element of type %s", e->typeName());
+        LOGW("Cannot select element of type %s", e->typeName());
         return false;
     }
 
     if (e->score() != _select->score() || elWrapper->ownership() != Ownership::SCORE) {
-        qWarning("Selection::select: element does not belong to score");
+        LOGW("Selection::select: element does not belong to score");
         return false;
     }
 
@@ -104,7 +104,7 @@ bool Selection::select(EngravingItem* elWrapper, bool add)
 ///   \param startTick start tick to be included in selection
 ///   \param endTick end tick of selection, excluded from selection
 ///   \param startStaff start staff index, included in selection
-///   \param endStaff end staff index, excluded from seleciton
+///   \param endStaff end staff index, excluded from selection
 ///   \return \p true on success, \p false if selection
 ///   cannot be changed, e.g. due to the ongoing operation
 ///   on a score (like dragging elements) or incorrect
@@ -118,7 +118,7 @@ bool Selection::selectRange(int startTick, int endTick, int startStaff, int endS
         return false;
     }
 
-    const int nstaves = _select->score()->nstaves();
+    const int nstaves = static_cast<int>(_select->score()->nstaves());
 
     startStaff = qBound(0, startStaff, nstaves - 1);
     endStaff = qBound(1, endStaff, nstaves);

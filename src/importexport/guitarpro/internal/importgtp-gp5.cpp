@@ -66,6 +66,9 @@
 #include "libmscore/tremolobar.h"
 #include "libmscore/tuplet.h"
 #include "libmscore/volta.h"
+#include "libmscore/slide.h"
+
+#include "log.h"
 
 using namespace mu::engraving;
 
@@ -393,7 +396,7 @@ Fraction GuitarPro5::readBeat(const Fraction& tick, int voice, Measure* measure,
     int r = readChar();
     if (r & 0x8) {
         int rrr = readChar();
-        qDebug("  3beat read 0x%02x", rrr);
+        LOGD("  3beat read 0x%02x", rrr);
     }
     if (cr && cr->isChord()) {
         if (toChord(cr)->notes().size() == 0) {
@@ -464,7 +467,7 @@ bool GuitarPro5::readMixChange(Measure* measure)
     if (reverb >= 0) {
         readChar();
     }
-    //qDebug("read reverb: %d", reverb);
+    //LOGD("read reverb: %d", reverb);
     if (phase >= 0) {
         readChar();
     }
@@ -596,7 +599,7 @@ bool GuitarPro5::readTracks()
         ch->setReverb(channelDefaults[midiChannel].reverb);
         staff->part()->setMidiChannel(midiChannel, midiPort);
 
-        //qDebug("default2: %d", channelDefaults[i].reverb);
+        //LOGD("default2: %d", channelDefaults[i].reverb);
         // missing: phase, tremolo
     }
     skip(version == 500 ? 2 : 1);
@@ -636,7 +639,7 @@ void GuitarPro5::readMeasures(int /*startingTempo*/)
             if (!(((bar == (measures - 1)) && (staffIdx == (staves - 1))))) {
                 /*int a = */
                 readChar();
-                // qDebug("    ======skip %02x", a);
+                // LOGD("    ======skip %02x", a);
             }
         }
         if (bar == 1 && !mixChange) {
@@ -1012,7 +1015,7 @@ bool GuitarPro5::readNoteEffects(Note* note)
             //note->setSlideNote(gn);
         }
     }
-    if (modMask2 & EFFECT_STACATTO) {
+    if (modMask2 & EFFECT_STACCATO) {
         Chord* chord = note->chord();
         Articulation* a = Factory::createArticulation(chord);
         a->setSymId(SymId::articStaccatoAbove);
@@ -1046,7 +1049,7 @@ bool GuitarPro5::readNoteEffects(Note* note)
             t->setTremoloType(TremoloType::R32);
             chord->add(t);
         } else {
-            qDebug("Unknown tremolo value");
+            LOGD("Unknown tremolo value");
         }
     }
     if (modMask2 & EFFECT_SLIDE) {
@@ -1136,37 +1139,73 @@ bool GuitarPro5::readNoteEffects(Note* note)
     }
 
     if (modMask2 & EFFECT_ARTIFICIAL_HARMONIC) {
-        int type = readArtificialHarmonic();
-        if (type == 2) {
-            auto harmNote = readUChar();
-            /*auto sharp =*/ readChar();
-            auto octave = readUChar();
+        int type = readChar();
+        if (type == 1 || type == 3) {
+            int fret = type == 3 ? (readChar() - note->fret()) : note->fret();
 
-            auto harmonicNote = Factory::createNote(note->chord());
-            harmonicNote->setHarmonic(true);
-            note->chord()->add(harmonicNote);
+            note->setHarmonic(true);
+            float harmonicFret = naturalHarmonicFromFret(fret);
+            int harmonicOvertone = GuitarPro::harmonicOvertone(note, harmonicFret, type);
+            note->setDisplayFret(Note::DisplayFretOption::NaturalHarmonic);
+            note->setHarmonicFret(harmonicFret);
             auto staff = note->staff();
+            int pitch = staff->part()->instrument()->stringData()->getPitch(note->string(), harmonicOvertone, staff);
+
+            note->setPitch(std::clamp(pitch, 0, 127));
+            note->setTpcFromPitch();
+        } else if (type == 2) {
             int fret = note->fret();
-            switch (harmNote) {
-            case 0: fret += 24;
+            float midi = note->pitch() + fret;
+            int currentOctave = floor(midi / 12);
+            auto harmNote = readChar();
+            readChar();
+            auto octave = currentOctave + readChar();
+
+            Note* harmonicNote = Factory::createNote(note->chord());
+
+            harmonicNote->setHarmonic(true);
+            harmonicNote->setDisplayFret(Note::DisplayFretOption::ArtificialHarmonic);
+            note->setDisplayFret(Note::DisplayFretOption::Hide);
+
+            Staff* staff = note->staff();
+            float harmonicFret = 0;
+            switch (static_cast<int>(((octave * 12) + harmNote) - midi)) {
+            case 4:
+                harmonicFret = 12;
                 break;
-            case 2: fret += 34;
+            case 11:
+                harmonicFret = 7;
                 break;
-            case 4: fret += 38;
+            case 16:
+                harmonicFret = 5;
                 break;
-            case 5: fret += 12;
+            case 20:
+                harmonicFret = 4;
                 break;
-            case 7: fret += 32;
+            case 23:
+                harmonicFret = 3.2f;
                 break;
-            case 9: fret += 28;
+            case 25:
+                harmonicFret = 2.7f;
                 break;
-            default: fret += octave * 12;
+            case 28:
+                harmonicFret = 2.4f;
+                break;
+            default:
+                harmonicFret = 12;
+                break;
             }
+
+            int overtoneFret = GuitarPro::harmonicOvertone(note, harmonicFret, type);
             harmonicNote->setString(note->string());
-            harmonicNote->setFret(fret);
-            harmonicNote->setPitch(staff->part()->instrument()->stringData()->getPitch(note->string(), fret + note->part()->capoFret(),
-                                                                                       nullptr));
+            harmonicNote->setFret(note->fret());
+            harmonicNote->setHarmonicFret(harmonicFret + fret);
+
+            int pitch = staff->part()->instrument()->stringData()->getPitch(note->string(), overtoneFret + note->part()->capoFret(), staff);
+
+            harmonicNote->setPitch(std::clamp(pitch, 0, 127));
             harmonicNote->setTpcFromPitch();
+            note->chord()->add(harmonicNote);
             addTextToNote("A.H.", harmonicNote);
         }
     }
@@ -1195,7 +1234,7 @@ bool GuitarPro5::readNoteEffects(Note* note)
         case 3:                     // 64
             break;
         default:
-            qDebug("unknown trill period %d", period);
+            LOGD("unknown trill period %d", period);
             break;
         }
     }
@@ -1236,7 +1275,7 @@ bool GuitarPro5::readNote(int string, Note* note)
             note->setHeadGroup(NoteHeadGroup::HEAD_CROSS);
             note->setDeadNote(true);
         } else {
-            qDebug("unknown note type: %d", noteType);
+            LOGD("unknown note type: %d", noteType);
         }
     }
 
@@ -1332,7 +1371,7 @@ bool GuitarPro5::readNote(int string, Note* note)
 
     if (tieNote) {
         auto staffIdx = note->staffIdx();
-        if (dead_end[{ staffIdx, string }]) {
+        if (dead_end[{ static_cast<int>(staffIdx), string }]) {
             note->setFret(-20);
             return false;
         }
@@ -1425,13 +1464,47 @@ bool GuitarPro5::readNote(int string, Note* note)
         }
         if (!found) {
             note->setFret(-20);
-            dead_end[{ staffIdx, string }] = true;
-            qDebug("tied note not found, pitch %d fret %d string %d", note->pitch(), note->fret(), note->string());
+            dead_end[{ static_cast<int>(staffIdx), string }] = true;
+            LOGD("tied note not found, pitch %d fret %d string %d", note->pitch(), note->fret(), note->string());
             return false;
         }
     }
     dead_end[{ note->staffIdx(), string }] = false;
     return slur;
+}
+
+float GuitarPro5::naturalHarmonicFromFret(int fret)
+{
+    switch (fret) {
+    case 2:
+        return 2.4f;
+    case 3:
+        return 3.2f;
+    case 4:
+    case 5:
+    case 7:
+    case 9:
+    case 12:
+    case 16:
+    case 17:
+    case 19:
+    case 24:
+        return fret;
+    case 8:
+        return 8.2f;
+    case 10:
+        return 9.6f;
+    case 14:
+        return 14.7f;
+    case 15:
+        return 14.7f;
+    case 21:
+        return 21.7f;
+    case 22:
+        return 21.7f;
+    default:
+        return 12.0f;
+    }
 }
 
 //---------------------------------------------------------

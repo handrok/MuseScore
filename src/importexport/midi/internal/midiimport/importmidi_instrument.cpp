@@ -20,17 +20,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "importmidi_instrument.h"
-#include "importmidi_chord.h"
-#include "importmidi_inner.h"
-#include "libmscore/instrtemplate.h"
-#include "libmscore/drumset.h"
-#include "libmscore/part.h"
-#include "libmscore/staff.h"
-#include "libmscore/masterscore.h"
-#include "importmidi_operations.h"
-#include "engraving/compat/midi/midiinstrument.h"
 
 #include <set>
+
+#include "importmidi_chord.h"
+#include "importmidi_inner.h"
+#include "importmidi_instrument_names.h"
+#include "importmidi_operations.h"
+
+#include "libmscore/drumset.h"
+#include "libmscore/instrtemplate.h"
+#include "libmscore/part.h"
+#include "libmscore/score.h"
+#include "libmscore/staff.h"
 
 namespace Ms {
 extern std::vector<InstrumentGroup*> instrumentGroups;
@@ -481,7 +483,7 @@ void createInstruments(Score* score, QList<MTrack>& tracks)
         if (instr) {
             for (size_t i = 0; i != part->nstaves(); ++i) {
                 if (instr->staffTypePreset) {
-                    part->staff(i)->init(instr, nullptr, i);
+                    part->staff(i)->init(instr, nullptr, static_cast<int>(i));
                     part->staff(i)->setStaffType(Fraction(0, 1), *(instr->staffTypePreset));
                 }
 //                        part->staff(i)->setLines(0, instr->staffLines[i]);

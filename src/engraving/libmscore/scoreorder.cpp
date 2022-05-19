@@ -33,6 +33,8 @@
 #include "libmscore/instrtemplate.h"
 #include "libmscore/undo.h"
 
+#include "log.h"
+
 using namespace mu;
 
 namespace Ms {
@@ -94,7 +96,7 @@ bool ScoreOrder::readBoolAttribute(Ms::XmlReader& reader, const char* attrName, 
     } else if (attr.toLower() == "true") {
         return true;
     }
-    qDebug("invalid value \"%s\" for attribute \"%s\", using default \"%d\"", qPrintable(attr), qPrintable(attrName), defvalue);
+    LOGD("invalid value \"%s\" for attribute \"%s\", using default \"%d\"", qPrintable(attr), qPrintable(attrName), defvalue);
     return defvalue;
 }
 
@@ -106,7 +108,7 @@ void ScoreOrder::readInstrument(Ms::XmlReader& reader)
 {
     QString instrumentId { reader.attribute("id") };
     if (!Ms::searchTemplate(instrumentId)) {
-        qDebug("cannot find instrument templates for <%s>", qPrintable(instrumentId));
+        LOGD("cannot find instrument templates for <%s>", qPrintable(instrumentId));
         reader.skipCurrentElement();
         return;
     }
@@ -317,7 +319,7 @@ int ScoreOrder::instrumentSortingIndex(const QString& instrumentId, bool isSoloi
 
     size_t index = groups.size();
 
-    auto calculateIndex = [instrumentId, &ii](int index) {
+    auto calculateIndex = [instrumentId, &ii](size_t index) {
         return index * ii.templateCount + ii.instrTemplate->sequenceOrder;
     };
 
@@ -327,7 +329,7 @@ int ScoreOrder::instrumentSortingIndex(const QString& instrumentId, bool isSoloi
         const ScoreGroup& sg = groups.at(i);
 
         if ((sg.family == SoloistsGroup) && isSoloist) {
-            return calculateIndex(i);
+            return static_cast<int>(calculateIndex(i));
         } else if ((priority < Priority::Family) && (sg.family == family)) {
             index = i;
             priority = Priority::Family;
@@ -341,7 +343,7 @@ int ScoreOrder::instrumentSortingIndex(const QString& instrumentId, bool isSoloi
         }
     }
 
-    return calculateIndex(index);
+    return static_cast<int>(calculateIndex(index));
 }
 
 //---------------------------------------------------------
@@ -404,8 +406,8 @@ void ScoreOrder::setBracketsAndBarlines(Score* score)
         QString family { getFamilyName(ii.instrTemplate, part->soloist()) };
         const ScoreGroup sg = getGroup(family, instrumentGroups[ii.groupIndex]->id);
 
-        int staffIdx { 0 };
-        bool blockThinBracket { false };
+        staff_idx_t staffIdx = 0;
+        bool blockThinBracket = false;
         for (Staff* staff : part->staves()) {
             for (BracketItem* bi : staff->brackets()) {
                 score->undo(new RemoveBracket(staff, bi->column(), bi->bracketType(), bi->bracketSpan()));
@@ -422,7 +424,7 @@ void ScoreOrder::setBracketsAndBarlines(Score* score)
                 }
             }
             if (sg.bracket && !staffIdx) {
-                thkBracketSpan += part->nstaves();
+                thkBracketSpan += static_cast<int>(part->nstaves());
             }
 
             if (!staffIdx || (ii.instrIndex != prvInstrument)) {
@@ -447,7 +449,7 @@ void ScoreOrder::setBracketsAndBarlines(Score* score)
                 prvStaff = nullptr;
             } else {
                 if (sg.thinBracket && !staffIdx) {
-                    thnBracketSpan += part->nstaves();
+                    thnBracketSpan += static_cast<int>(part->nstaves());
                 }
                 if (prvStaff) {
                     prvStaff->undoChangeProperty(Pid::STAFF_BARLINE_SPAN,

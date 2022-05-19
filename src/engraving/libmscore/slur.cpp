@@ -44,6 +44,8 @@
 // included for gonville/musejazz hook hack in SlurPos
 #include "scorefont.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 using namespace mu::draw;
@@ -71,7 +73,7 @@ void SlurSegment::draw(mu::draw::Painter* painter) const
     qreal mag = staff() ? staff()->staffMag(slur()->tick()) : 1.0;
 
     //Replace generic Qt dash patterns with improved equivalents to show true dots (keep in sync with tie.cpp)
-    std::vector<double> dotted     = { 0.01, 1.99 };   // tighter than Qt PenStyle::DotLine equivalent - woud be { 0.01, 2.99 }
+    std::vector<double> dotted     = { 0.01, 1.99 };   // tighter than Qt PenStyle::DotLine equivalent - would be { 0.01, 2.99 }
     std::vector<double> dashed     = { 3.00, 3.00 };   // Compensating for caps. Qt default PenStyle::DashLine is { 4.0, 2.0 }
     std::vector<double> wideDashed = { 5.00, 6.00 };
 
@@ -366,8 +368,8 @@ void SlurSegment::computeBezier(mu::PointF p6o)
     if ((p2.x() == 0.0) && (p2.y() == 0.0)) {
         Measure* m1 = slur()->startCR()->segment()->measure();
         Measure* m2 = slur()->endCR()->segment()->measure();
-        qDebug("zero slur at tick %d(%d) track %zu in measure %d-%d  tick %d ticks %d",
-               m1->tick().ticks(), tick().ticks(), track(), m1->no(), m2->no(), slur()->tick().ticks(), slur()->ticks().ticks());
+        LOGD("zero slur at tick %d(%d) track %zu in measure %d-%d  tick %d ticks %d",
+             m1->tick().ticks(), tick().ticks(), track(), m1->no(), m2->no(), slur()->tick().ticks(), slur()->ticks().ticks());
         slur()->setBroken(true);
         return;
     }
@@ -720,7 +722,7 @@ void Slur::slurPosChord(SlurPos* sp)
     Measure* measure = endChord()->measure();
     sp->system1 = measure->system();
     if (!sp->system1) {               // DEBUG
-        qDebug("no system1");
+        LOGD("no system1");
         return;
     }
     Q_ASSERT(sp->system1);
@@ -812,7 +814,7 @@ void Slur::slurPos(SlurPos* sp)
     sp->system2 = ecr->measure()->system();
 
     if (sp->system1 == 0) {
-        qDebug("no system1");
+        LOGD("no system1");
         return;
     }
 
@@ -1175,14 +1177,14 @@ int calcStemArrangement(EngravingItem* start, EngravingItem* end)
 void Slur::write(XmlWriter& xml) const
 {
     if (broken()) {
-        qDebug("broken slur not written");
+        LOGD("broken slur not written");
         return;
     }
-    if (!xml.canWrite(this)) {
+    if (!xml.context()->canWrite(this)) {
         return;
     }
     xml.startObject(this);
-    if (xml.clipboardmode()) {
+    if (xml.context()->clipboardmode()) {
         xml.tag("stemArr", calcStemArrangement(startElement(), endElement()));
     }
     SlurTie::writeProperties(xml);
@@ -1283,8 +1285,8 @@ SpannerSegment* Slur::layoutSystem(System* system)
             setTrack2(track());
         }
         if (startCR() == 0 || startCR()->measure() == 0) {
-            qDebug("Slur::layout(): track %zu-%zu  %p - %p tick %d-%d null start anchor",
-                   track(), track2(), startCR(), endCR(), tick().ticks(), tick2().ticks());
+            LOGD("Slur::layout(): track %zu-%zu  %p - %p tick %d-%d null start anchor",
+                 track(), track2(), startCR(), endCR(), tick().ticks(), tick2().ticks());
             return slurSegment;
         }
         if (endCR() == 0) {         // sanity check
@@ -1589,12 +1591,12 @@ void Slur::layout()
     }
 
     if (startCR() == 0 || startCR()->measure() == 0) {
-        qDebug("track %zu-%zu  %p - %p tick %d-%d null start anchor",
-               track(), track2(), startCR(), endCR(), tick().ticks(), tick2().ticks());
+        LOGD("track %zu-%zu  %p - %p tick %d-%d null start anchor",
+             track(), track2(), startCR(), endCR(), tick().ticks(), tick2().ticks());
         return;
     }
     if (endCR() == 0) {       // sanity check
-        qDebug("no end CR for %d", (tick() + ticks()).ticks());
+        LOGD("no end CR for %d", (tick() + ticks()).ticks());
         setEndElement(startCR());
         setTick2(tick());
     }
@@ -1656,7 +1658,7 @@ void Slur::layout()
         ++is;
     }
     if (is == sl.end()) {
-        qDebug("Slur::layout  first system not found");
+        LOGD("Slur::layout  first system not found");
     }
     setPos(0, 0);
 

@@ -28,6 +28,8 @@
 
 #include "infrastructure/draw/painter.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::draw;
 
@@ -178,7 +180,7 @@ qreal Shape::minHorizontalDistance(const Shape& a, Score* score) const
                 sameVoiceCases = sameVoiceExceptions(item1, item2);
                 limitedKerning = limitedKerningExceptions(item1, item2);
             }
-            if (sameVoiceCases // padding for note-note and note-stem needs needs this exception
+            if (sameVoiceCases // padding for note-note and note-stem needs this exception
                 && Ms::intersects(ay1, ay2, by1, by2, verticalClearance)
                 && (item2->isNote() || item2->isStem())) {
                 padding = std::max(padding, double(score->styleMM(Sid::minNoteDistance)));
@@ -350,8 +352,8 @@ void Shape::remove(const RectF& r)
             return;
         }
     }
-    // qWarning("Shape::remove: RectF not found in Shape");
-    qFatal("Shape::remove: RectF not found in Shape");
+
+    ASSERT_X("Shape::remove: RectF not found in Shape");
 }
 
 void Shape::remove(const Shape& s)
@@ -417,7 +419,7 @@ void Shape::paint(Painter& painter) const
 
 void Shape::dump(const char* p) const
 {
-    qDebug("Shape dump: %p %s size %zu", this, p, size());
+    LOGD("Shape dump: %p %s size %zu", this, p, size());
     for (const ShapeElement& r : *this) {
         r.dump();
     }
@@ -425,7 +427,7 @@ void Shape::dump(const char* p) const
 
 void ShapeElement::dump() const
 {
-    qDebug("   %s: %f %f %f %f", toItem ? toItem->typeName() : "", x(), y(), width(), height());
+    LOGD("   %s: %f %f %f %f", toItem ? toItem->typeName() : "", x(), y(), width(), height());
 }
 
 #endif

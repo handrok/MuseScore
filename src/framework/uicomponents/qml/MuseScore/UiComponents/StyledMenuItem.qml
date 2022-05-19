@@ -60,7 +60,7 @@ ListItemBlank {
 
     isSelected: Boolean(itemPrv.showedSubMenu) || (itemPrv.isSelectable && itemPrv.isSelected) || navigation.highlight
 
-    navigation.name: Boolean(modelData) ? modelData.id : titleLabel.text
+    navigation.name: Boolean(itemPrv.id) ? itemPrv.id : titleLabel.text
     navigation.accessible.role: MUAccessible.MenuItem
     navigation.accessible.name: {
         var text = itemPrv.title
@@ -126,6 +126,8 @@ ListItemBlank {
     QtObject {
         id: itemPrv
 
+        property string id: Boolean(modelData) && Boolean(modelData.id) ? modelData.id : ""
+
         property string title: Boolean(modelData) && Boolean(modelData.title) ? modelData.title : ""
 
         property bool hasShortcuts: Boolean(modelData) && Boolean(modelData.shortcuts)
@@ -154,8 +156,6 @@ ListItemBlank {
 
             menu.model = modelData.subitems
             menu.anchorItem = root.menuAnchorItem
-
-            menu.setParentWindow(root.parentWindow)
 
             menu.handleMenuItem.connect(function(itemId) {
                 Qt.callLater(root.handleMenuItem, itemId)
@@ -303,15 +303,15 @@ ListItemBlank {
                 return
             }
 
-            var mouseGlogalPos = mapToGlobal(Qt.point(mouseX, mouseY))
+            var mouseGlobalPos = mapToGlobal(Qt.point(mouseX, mouseY))
             var showedSubMenuGlobalPos = itemPrv.showedSubMenu.contentItem.mapToGlobal(0, 0)
 
             var eps = 8
             var subMenuWidth = itemPrv.showedSubMenu.width
             var subMenuHeight = itemPrv.showedSubMenu.height
 
-            var isHoveredOnShowedSubMenu = (showedSubMenuGlobalPos.x < mouseGlogalPos.x + eps && mouseGlogalPos.x - eps < showedSubMenuGlobalPos.x + subMenuWidth)
-                    && (showedSubMenuGlobalPos.y < mouseGlogalPos.y + eps && mouseGlogalPos.y - eps < showedSubMenuGlobalPos.y + subMenuHeight)
+            var isHoveredOnShowedSubMenu = (showedSubMenuGlobalPos.x < mouseGlobalPos.x + eps && mouseGlobalPos.x - eps < showedSubMenuGlobalPos.x + subMenuWidth)
+                    && (showedSubMenuGlobalPos.y < mouseGlobalPos.y + eps && mouseGlobalPos.y - eps < showedSubMenuGlobalPos.y + subMenuHeight)
 
             if (isHoveredOnShowedSubMenu) {
                 return

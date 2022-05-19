@@ -22,11 +22,10 @@
 
 #include "chordrest.h"
 
-#include <QDebug>
-
 #include "style/style.h"
 #include "rw/xml.h"
 #include "rw/xmlvalue.h"
+#include "rw/writecontext.h"
 #include "types/typesconv.h"
 
 #include "factory.h"
@@ -65,6 +64,8 @@
 #include "rehearsalmark.h"
 #include "instrchange.h"
 #include "navigate.h"
+
+#include "log.h"
 
 using namespace mu;
 using namespace mu::engraving;
@@ -176,19 +177,19 @@ void ChordRest::writeProperties(XmlWriter& xml) const
         lyrics->write(xml);
     }
 
-    const int curTick = xml.curTick().ticks();
+    const int curTick = xml.context()->curTick().ticks();
 
     if (!isGrace()) {
         Fraction t(globalTicks());
         if (staff()) {
-            t /= staff()->timeStretch(xml.curTick());
+            t /= staff()->timeStretch(xml.context()->curTick());
         }
-        xml.incCurTick(t);
+        xml.context()->incCurTick(t);
     }
 
     for (auto i : score()->spannerMap().findOverlapping(curTick - 1, curTick + 1)) {
         Spanner* s = i.value;
-        if (s->generated() || !s->isSlur() || toSlur(s)->broken() || !xml.canWrite(s)) {
+        if (s->generated() || !s->isSlur() || toSlur(s)->broken() || !xml.context()->canWrite(s)) {
             continue;
         }
 
@@ -229,7 +230,7 @@ bool ChordRest::readProperties(XmlReader& e)
             }
         } else {
             if (score()->mscVersion() <= 114) {
-                SigEvent event = score()->sigmap()->timesig(e.tick());
+                SigEvent event = score()->sigmap()->timesig(e.context()->tick());
                 setTicks(event.timesig());
             }
         }
@@ -241,14 +242,14 @@ bool ChordRest::readProperties(XmlReader& e)
         atr->read(e);
         add(atr);
     } else if (tag == "leadingSpace" || tag == "trailingSpace") {
-        qDebug("ChordRest: %s obsolete", tag.toLocal8Bit().data());
+        LOGD("ChordRest: %s obsolete", tag.toLocal8Bit().data());
         e.skipCurrentElement();
     } else if (tag == "small") {
         m_isSmall = e.readInt();
     } else if (tag == "duration") {
         setTicks(e.readFraction());
     } else if (tag == "ticklen") {      // obsolete (version < 1.12)
-        int mticks = score()->sigmap()->timesig(e.tick()).timesig().ticks();
+        int mticks = score()->sigmap()->timesig(e.context()->tick()).timesig().ticks();
         int i = e.readInt();
         if (i == 0) {
             i = mticks;
@@ -272,7 +273,7 @@ bool ChordRest::readProperties(XmlReader& e)
         Spanner::readSpanner(e, this, track());
     } else if (tag == "Lyrics") {
         EngravingItem* element = Factory::createLyrics(this);
-        element->setTrack(e.track());
+        element->setTrack(e.context()->track());
         element->read(e);
         add(element);
     } else if (tag == "pos") {
@@ -350,7 +351,7 @@ void ChordRest::readAddConnector(ConnectorInfoReader* info, bool pasteMode)
                 }
             }
         } else {
-            qDebug("ChordRest::readAddConnector(): Slur end is neither start nor end");
+            LOGD("ChordRest::readAddConnector(): Slur end is neither start nor end");
         }
     }
     break;
@@ -526,7 +527,7 @@ EngravingItem* ChordRest::drop(EditData& data)
     }
     case ElementType::INSTRUMENT_CHANGE:
         if (part()->instruments().find(tick().ticks()) != part()->instruments().end()) {
-            qDebug() << "InstrumentChange already exists at tick = " << tick().ticks();
+            LOGD() << "InstrumentChange already exists at tick = " << tick().ticks();
             delete e;
             return 0;
         } else {
@@ -609,7 +610,7 @@ EngravingItem* ChordRest::drop(EditData& data)
             score()->undoAddElement(spanner);
             return e;
         }
-        qDebug("cannot drop %s", e->typeName());
+        LOGD("cannot drop %s", e->typeName());
         delete e;
         return 0;
     }
@@ -718,7 +719,7 @@ void ChordRest::add(EngravingItem* e)
     e->setTrack(track());
     switch (e->type()) {
     case ElementType::ARTICULATION:             // for backward compatibility
-        qDebug("ChordRest::add: unknown element %s", e->typeName());
+        LOGD("ChordRest::add: unknown element %s", e->typeName());
         break;
     case ElementType::LYRICS:
         if (e->isStyled(Pid::OFFSET)) {
@@ -728,7 +729,7 @@ void ChordRest::add(EngravingItem* e)
         e->added();
         break;
     default:
-        qFatal("ChordRest::add: unknown element %s", e->typeName());
+        ASSERT_X("ChordRest::add: unknown element " + QString(e->typeName()));
         break;
     }
 }
@@ -747,12 +748,12 @@ void ChordRest::remove(EngravingItem* e)
             _lyrics.erase(i);
             e->removed();
         } else {
-            qDebug("ChordRest::remove: %s %p not found", e->typeName(), e);
+            LOGD("ChordRest::remove: %s %p not found", e->typeName(), e);
         }
     }
     break;
     default:
-        qFatal("ChordRest::remove: unknown element <%s>", e->typeName());
+        ASSERT_X("ChordRest::remove: unknown element " + QString(e->typeName()));
     }
 }
 

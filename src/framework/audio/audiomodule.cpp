@@ -126,10 +126,6 @@ void AudioModule::registerUiTypes()
 
 void AudioModule::onInit(const framework::IApplication::RunMode& mode)
 {
-    if (mode != framework::IApplication::RunMode::Editor) {
-        return;
-    }
-
     /** We have three layers
         ------------------------
         Main (main thread) - public client interface
@@ -152,7 +148,7 @@ void AudioModule::onInit(const framework::IApplication::RunMode& mode)
         in order to avoid problems associated with access data thread safety.
 
         Objects from different layers (threads) must interact only through:
-            * Asyncronous API (@see thirdparty/deto) - controls and pass midi data
+            * Asynchronous API (@see thirdparty/deto) - controls and pass midi data
             * AudioBuffer - pass audio data from worker to driver for play
 
         AudioEngine is in the worker and operates only with the buffer,
@@ -177,10 +173,15 @@ void AudioModule::onInit(const framework::IApplication::RunMode& mode)
     };
 
     IAudioDriver::Spec activeSpec;
-    bool driverOpened = s_audioDriver->open(requiredSpec, &activeSpec);
-    if (!driverOpened) {
-        LOGE() << "audio output open failed";
-        return;
+
+    if (mode == framework::IApplication::RunMode::Editor) {
+        bool driverOpened = s_audioDriver->open(requiredSpec, &activeSpec);
+        if (!driverOpened) {
+            LOGE() << "audio output open failed";
+            return;
+        }
+    } else {
+        activeSpec = requiredSpec;
     }
 
     // Setup worker
@@ -229,6 +230,7 @@ void AudioModule::onDeinit()
     if (s_audioWorker->isRunning()) {
         s_audioWorker->stop([]() {
             ONLY_AUDIO_WORKER_THREAD;
+            s_playbackFacade->deInit();
             AudioEngine::instance()->deinit();
         });
     }

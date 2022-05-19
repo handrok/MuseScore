@@ -38,6 +38,8 @@
 #include "segment.h"
 #include "staff.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 
@@ -350,7 +352,7 @@ void Trill::layout()
     }
     TrillSegment* ls = toTrillSegment(frontSegment());
     if (spannerSegments().empty()) {
-        qDebug("Trill: no segments");
+        LOGD("Trill: no segments");
     }
     if (_accidental) {
         _accidental->setParent(ls);
@@ -381,7 +383,7 @@ LineSegment* Trill::createLineSegment(System* parent)
 
 void Trill::write(XmlWriter& xml) const
 {
-    if (!xml.canWrite(this)) {
+    if (!xml.context()->canWrite(this)) {
         return;
     }
     xml.startObject(this);
@@ -442,7 +444,7 @@ void Trill::setTrillType(const QString& s)
             return;
         }
     }
-    qDebug("Trill::setSubtype: unknown <%s>", qPrintable(s));
+    LOGD("Trill::setSubtype: unknown <%s>", qPrintable(s));
 }
 
 //---------------------------------------------------------
@@ -456,7 +458,7 @@ QString Trill::type2name(Trill::Type t)
             return i.name;
         }
     }
-    qDebug("unknown Trill subtype %d", int(t));
+    LOGD("unknown Trill subtype %d", int(t));
     return "?";
 }
 

@@ -28,6 +28,8 @@
 #include "score.h"
 #include "measure.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 
@@ -127,7 +129,7 @@ void Marker::setMarkerType(Type t)
         break;
 
     default:
-        qDebug("unknown marker type %d", int(t));
+        LOGD("unknown marker type %d", int(t));
         break;
     }
     if (empty() && txt) {
@@ -190,7 +192,7 @@ void Marker::layout()
     // although normally laid out to parent (measure) width,
     // force to center over barline if left-aligned
 
-    if (layoutToParentWidth() && align() == AlignH::LEFT) {
+    if (!score()->isPaletteScore() && layoutToParentWidth() && align() == AlignH::LEFT) {
         rxpos() -= width() * 0.5;
     }
 

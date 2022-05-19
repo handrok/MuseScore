@@ -28,6 +28,7 @@
 
 #include "compat/writescorehook.h"
 #include "rw/xml.h"
+#include "rw/writecontext.h"
 
 #include "duration.h"
 #include "measure.h"
@@ -35,6 +36,8 @@
 #include "staff.h"
 
 #include "dtl/dtl.hpp"
+
+#include "log.h"
 
 using namespace mu;
 using namespace mu::engraving;
@@ -649,7 +652,7 @@ void TextDiffParser::makeDiffs(const QString& mscx, const std::vector<std::pair<
         r.readNext();
     }
     if (r.hasError()) {
-        qWarning("TextDiffParser::makeDiffs: error while reading MSCX output: %s", r.errorString().toLatin1().constData());
+        LOGW("TextDiffParser::makeDiffs: error while reading MSCX output: %s", r.errorString().toLatin1().constData());
     }
 }
 
@@ -846,8 +849,8 @@ void ScoreDiff::update()
     qDeleteAll(_mergedTextDiffs);
     _mergedTextDiffs.clear();
 
-    XmlWriter xml1(_s1);
-    XmlWriter xml2(_s2);
+    XmlWriter xml1;
+    XmlWriter xml2;
     QString mscx1(scoreToMscx(_s1, xml1));
     QString mscx2(scoreToMscx(_s2, xml2));
 
@@ -964,14 +967,14 @@ void ScoreDiff::processMarkupDiffs()
 
     std::vector<BaseDiff*> newDiffs;
     for (auto& m : measuresToProcess) {
-        XmlWriter xml1(m.m1->score());
-        xml1.setWriteTrack(true);
-        xml1.setWritePosition(true);
+        XmlWriter xml1;
+        xml1.context()->setWriteTrack(true);
+        xml1.context()->setWritePosition(true);
         QString mscx1 = measureToMscx(m.m1, xml1, m.staff);
 
-        XmlWriter xml2(m.m2->score());
-        xml2.setWriteTrack(true);
-        xml2.setWritePosition(true);
+        XmlWriter xml2;
+        xml2.context()->setWriteTrack(true);
+        xml2.context()->setWritePosition(true);
         QString mscx2 = measureToMscx(m.m2, xml2, m.staff);
 
         std::vector<TextDiff> textDiffs = MscxModeDiff().mscxModeDiff(mscx1, mscx2);
@@ -1248,7 +1251,7 @@ bool TextDiff::merge(const TextDiff& other)
             text[0].append(other.text[0]);
             text[1].append(other.text[1]);
         } else {
-            qWarning("TextDiff:merge: invalid argument: wrong line numbers");
+            LOGW("TextDiff:merge: invalid argument: wrong line numbers");
             return false;
         }
     } else if ((type == DiffType::INSERT && other.type == DiffType::DELETE)
@@ -1260,7 +1263,7 @@ bool TextDiff::merge(const TextDiff& other)
         end[iOther] = other.end[iOther];
         text[iOther] = other.text[iOther];
     } else {
-        qWarning("TextDiff:merge: invalid argument: wrong types");
+        LOGW("TextDiff:merge: invalid argument: wrong types");
         return false;
     }
 

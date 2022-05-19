@@ -40,6 +40,8 @@
 #include "accidental.h"
 #include "stem.h"
 
+#include "log.h"
+
 using namespace mu;
 
 namespace Ms {
@@ -75,7 +77,7 @@ void TieSegment::draw(mu::draw::Painter* painter) const
     qreal mag = staff() ? staff()->staffMag(tie()->tick()) : 1.0;
 
     //Replace generic Qt dash patterns with improved equivalents to show true dots (keep in sync with slur.cpp)
-    std::vector<double> dotted     = { 0.01, 1.99 };   // tighter than Qt PenStyle::DotLine equivalent - woud be { 0.01, 2.99 }
+    std::vector<double> dotted     = { 0.01, 1.99 };   // tighter than Qt PenStyle::DotLine equivalent - would be { 0.01, 2.99 }
     std::vector<double> dashed     = { 3.00, 3.00 };   // Compensating for caps. Qt default PenStyle::DashLine is { 4.0, 2.0 }
     std::vector<double> wideDashed = { 5.00, 6.00 };
 
@@ -257,7 +259,7 @@ void TieSegment::computeBezier(PointF shoulderOffset)
 
     PointF tieEndNormalized = tieEnd - tieStart;  // normalize to zero
     if (tieEndNormalized.x() == 0.0) {
-        qDebug("zero tie");
+        LOGD("zero tie");
         return;
     }
 
@@ -332,13 +334,8 @@ void TieSegment::computeBezier(PointF shoulderOffset)
     shapePath.cubicTo(bezier2 + bezier2Offset + tieThickness, bezier1 + bezier1Offset + tieThickness, PointF());
 
     // translate back
-    double y = tieStart.y();
-    const double offsetFactor = 0.2;
-    if (staff()->isTabStaff(slurTie()->tick())) {
-        y += (_spatium * (slurTie()->up() ? -offsetFactor : offsetFactor));
-    }
     t.reset();
-    t.translate(tieStart.x(), y);
+    t.translate(tieStart.x(), tieStart.y());
     t.rotateRadians(tieAngle);
     path = t.map(path);
     shapePath = t.map(shapePath);
@@ -376,7 +373,8 @@ void TieSegment::computeBezier(PointF shoulderOffset)
 void TieSegment::adjustY(const PointF& p1, const PointF& p2)
 {
     autoAdjustOffset = PointF();
-
+    const StaffType* staffType = this->staffType();
+    bool useTablature = staffType->isTabStaff();
     Tie* t = toTie(slurTie());
     Chord* sc = t->startNote() ? t->startNote()->chord() : 0;
 
@@ -400,8 +398,8 @@ void TieSegment::adjustY(const PointF& p1, const PointF& p2)
     ups(Grip::END).p = p2;
 
     //Adjust Y pos to staff type offset before other calculations
-    if (staffType()) {
-        rypos() += staffType()->yoffset().val() * spatium();
+    if (staffType) {
+        rypos() += staffType->yoffset().val() * spatium();
     }
 
     if (isNudged() || isEdited()) {
@@ -459,7 +457,15 @@ void TieSegment::adjustY(const PointF& p1, const PointF& p2)
     qreal tieThicknessSp = (styleP(Sid::SlurMidWidth) + ((styleP(Sid::SlurMidWidth) - styleP(Sid::SlurEndWidth)) / 2)) / ld;
     qreal tieMidOutsideSp = endpointYsp + (isUp ? -tieHeightSp : tieHeightSp);
     qreal tieMidInsideSp = tieMidOutsideSp + (isUp ? (tieThicknessSp) : -(tieThicknessSp));
-    if (!t->isInside()) {
+    if (useTablature && t->isInside()) {
+        const qreal tieEndpointOffsetSp = 0.2;
+        Note* sn = tie()->startNote();
+        int string = sn->string();
+        shoulderHeightMax = 4 / 3; // at max ties will be 1sp tall
+        qreal newAnchor = (qreal)string;
+        newAnchor += tieEndpointOffsetSp * (isUp ? -1 : 1);
+        setAutoAdjust(PointF(0, (newAnchor - endpointYsp) * ld));
+    } else if (!t->isInside()) {
         // OUTSIDE TIES
 
         qreal endpointYLineDist = endpointYsp - floor(endpointYsp);
@@ -527,7 +533,7 @@ void TieSegment::adjustY(const PointF& p1, const PointF& p2)
         }
         setAutoAdjust(PointF(0, (tieAdjustSp * ld) - (p1.y() - (endpointYsp * ld))));
     } else {
-        // INSIDE TIES
+        // INSIDE TIES (non-tab)
         bool collideAbove = false;
         bool collideBelow = false;
         Note* sn = tie()->startNote();
@@ -834,18 +840,12 @@ void Tie::slurPos(SlurPos* sp)
      in TieSegment::adjustY().
     */
 
-    // TODO: this probably breaks for tab staves!! at the time of writing tab staves are not working
-    qreal yOffOutside = useTablature
-                        ? (_up ? staffType->fretBoxY() : staffType->fretBoxY() + staffType->fretBoxH()) * magS()
-                        : 0; // offset for outside notes is determined in adjustY(), so for the moment the tie will be the exact top of the notehead
-    qreal yOffInside = useTablature ? yOffOutside * 0.5 : 0; // same for inside
-
     Chord* sc = startNote()->chord();
     Chord* ec = endNote() ? endNote()->chord() : nullptr;
     sp->system1 = sc->measure()->system();
     if (!sp->system1) {
         Measure* m = sc->measure();
-        qDebug("No system: measure is %d has %d count %d", m->isMMRest(), m->hasMMRest(), m->mmRestCount());
+        LOGD("No system: measure is %d has %d count %d", m->isMMRest(), m->hasMMRest(), m->mmRestCount());
     }
 
     qreal x1, y1;
@@ -867,7 +867,12 @@ void Tie::slurPos(SlurPos* sp)
     y2 = endNote() ? endNote()->pos().y() : y1;
 
     // force tie to be horizontal except for cross-staff or if there is a difference of line (tpc, clef)
-    bool isHorizontal = ec ? startNote()->line() == endNote()->line() && sc->vStaffIdx() == ec->vStaffIdx() : true;
+    int line1 = useTablature ? startNote()->string() : startNote()->line();
+    int line2 = line1;
+    if (endNote()) {
+        line2 = useTablature ? endNote()->string() : endNote()->line();
+    }
+    bool isHorizontal = ec ? line1 == line2 && sc->vStaffIdx() == ec->vStaffIdx() : true;
     y1 += startNote()->bbox().y();
     if (endNote()) {
         y2 += endNote()->bbox().y();
@@ -881,8 +886,6 @@ void Tie::slurPos(SlurPos* sp)
     if (!endNote()) {
         y2 = y1;
     }
-    y1 += isInside() ? yOffInside : yOffOutside;
-    y2 += isInside() ? yOffInside : yOffOutside;
 
     // ensure that horizontal ties remain horizontal
     if (isHorizontal) {
@@ -1104,7 +1107,7 @@ TieSegment* Tie::layoutFor(System* system)
     //
     if (startNote() == 0 || endNote() == 0) {
         if (startNote() == 0) {
-            qDebug("no start note");
+            LOGD("no start note");
             return 0;
         }
         Chord* c1 = startNote()->chord();

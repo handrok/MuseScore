@@ -37,6 +37,8 @@
 #include "mscore.h"
 #include "staff.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 
@@ -522,7 +524,7 @@ TextLineBase::TextLineBase(const ElementType& type, EngravingItem* parent, Eleme
 
 void TextLineBase::write(XmlWriter& xml) const
 {
-    if (!xml.canWrite(this)) {
+    if (!xml.context()->canWrite(this)) {
         return;
     }
     xml.startObject(this);
@@ -539,7 +541,7 @@ void TextLineBase::read(XmlReader& e)
     eraseSpannerSegments();
 
     if (score()->mscVersion() < 301) {
-        e.addSpanner(e.intAttribute("id", -1), this);
+        e.context()->addSpanner(e.intAttribute("id", -1), this);
     }
 
     while (e.readNextStartElement()) {
@@ -729,7 +731,7 @@ bool TextLineBase::setProperty(Pid id, const PropertyValue& v)
         break;
     case Pid::BEGIN_FONT_SIZE:
         if (v.toReal() <= 0) {
-            qFatal("font size is %f", v.toReal());
+            ASSERT_X(QString::asprintf("font size is %f", v.toReal()));
         }
         setBeginFontSize(v.toReal());
         break;

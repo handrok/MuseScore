@@ -704,6 +704,10 @@ void NotationViewInputController::mouseReleaseEvent(QMouseEvent* event)
 
 void NotationViewInputController::handleLeftClickRelease(const QPointF& releasePoint)
 {
+    if (m_view->isNoteEnterMode()) {
+        return;
+    }
+
     const INotationInteraction::HitElementContext& ctx = hitElementContext();
     if (!ctx.element) {
         return;
@@ -727,22 +731,23 @@ void NotationViewInputController::handleLeftClickRelease(const QPointF& releaseP
         return;
     }
 
-    if (interaction->isTextSelected() && interaction->textEditingAllowed(ctx.element)) {
+    if (interaction->textEditingAllowed(ctx.element)) {
         dispatcher()->dispatch("edit-text", ActionData::make_arg1<PointF>(m_beginPoint));
     }
 }
 
-void NotationViewInputController::mouseDoubleClickEvent(QMouseEvent*)
+void NotationViewInputController::mouseDoubleClickEvent(QMouseEvent* event)
 {
     if (m_view->isNoteEnterMode()) {
         return;
     }
 
-    if (viewInteraction()->isElementEditStarted()) {
-        return;
-    }
+    PointF logicPos = m_view->toLogical(event->pos());
+    const EngravingItem* hitElement = viewInteraction()->hitElement(logicPos, hitWidth());
 
-    dispatcher()->dispatch("edit-element", ActionData::make_arg1<PointF>(m_beginPoint));
+    if (hitElement && hitElement->isMeasure() && event->modifiers() == Qt::NoModifier) {
+        dispatcher()->dispatch("note-input", ActionData::make_arg1<PointF>(m_beginPoint));
+    }
 }
 
 void NotationViewInputController::hoverMoveEvent(QHoverEvent* event)

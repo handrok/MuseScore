@@ -22,6 +22,7 @@
 #include "notationproject.h"
 
 #include <QBuffer>
+#include <QDir>
 #include <QFile>
 
 #include "engraving/engravingproject.h"
@@ -420,12 +421,16 @@ mu::Ret NotationProject::save(const io::path& path, SaveMode saveMode)
         return ret;
     }
     case SaveMode::AutoSave:
-        io::path complateBasename = io::completeBasename(path);
-
-        std::string suffix = io::suffix(complateBasename);
-        if (suffix.empty()) {
-            suffix = io::suffix(path);
+        std::string suffix = io::suffix(path);
+        if (suffix == IProjectAutoSaver::AUTOSAVE_SUFFIX) {
+            suffix = io::suffix(io::completeBasename(path));
         }
+
+        if (suffix.empty()) {
+            // Then it must be a MSCX folder
+            suffix = engraving::MSCX;
+        }
+
         return saveScore(path, suffix);
     }
 
@@ -463,8 +468,10 @@ mu::Ret NotationProject::saveScore(const io::path& path, const std::string& file
 
 mu::Ret NotationProject::doSave(const io::path& path, bool generateBackup, engraving::MscIoMode ioMode)
 {
-    QString currentPath = path.toQString();
-    QString savePath = currentPath + "_saving";
+    QString targetContainerPath = engraving::containerPath(path).toQString();
+    io::path targetMainFilePath = engraving::mainFilePath(path);
+    io::path targetMainFileName = engraving::mainFileName(path);
+    QString savePath = targetContainerPath + "_saving";
 
     // Step 1: check writable
     {
@@ -473,12 +480,21 @@ mu::Ret NotationProject::doSave(const io::path& path, bool generateBackup, engra
             LOGE() << "failed save, not writable path: " << savePath;
             return make_ret(notation::Err::UnknownError);
         }
+
+        if (ioMode == engraving::MscIoMode::Dir) {
+            // Dir needs to be created, otherwise we can't move to it
+            if (!QDir(targetContainerPath).mkpath(".")) {
+                LOGE() << "Couldn't create container directory";
+                return make_ret(notation::Err::UnknownError);
+            }
+        }
     }
 
     // Step 2: write project
     {
         MscWriter::Params params;
         params.filePath = savePath;
+        params.mainFileName = targetMainFileName.toQString();
         params.mode = ioMode;
         IF_ASSERT_FAILED(params.mode != MscIoMode::Unknown) {
             return make_ret(Ret::Code::InternalError);
@@ -503,19 +519,45 @@ mu::Ret NotationProject::doSave(const io::path& path, bool generateBackup, engra
 
     // Step 4: replace to saved file
     {
-        Ret ret = fileSystem()->move(savePath, currentPath, true);
-        if (!ret) {
-            return ret;
+        if (ioMode == MscIoMode::Dir) {
+            RetVal<io::paths> filesToBeMoved
+                = fileSystem()->scanFiles(savePath, { "*" }, io::IFileSystem::ScanMode::FilesAndFoldersInCurrentDir);
+            if (!filesToBeMoved.ret) {
+                return filesToBeMoved.ret;
+            }
+
+            Ret ret = make_ok();
+
+            for (const io::path& fileToBeMoved : filesToBeMoved.val) {
+                io::path destinationFile
+                    = io::path(targetContainerPath).appendingComponent(io::filename(fileToBeMoved));
+                LOGD() << fileToBeMoved << " to " << destinationFile;
+                ret = fileSystem()->move(fileToBeMoved, destinationFile, true);
+                if (!ret) {
+                    return ret;
+                }
+            }
+
+            // Try to remove the temp save folder (not problematic if fails)
+            ret = fileSystem()->removeFolderIfEmpty(savePath);
+            if (!ret) {
+                LOGW() << ret.toString();
+            }
+        } else {
+            Ret ret = fileSystem()->move(savePath, targetContainerPath, true);
+            if (!ret) {
+                return ret;
+            }
         }
     }
 
     // make file readable by all
     {
-        QFile::setPermissions(currentPath,
+        QFile::setPermissions(targetMainFilePath.toQString(),
                               QFile::ReadOwner | QFile::WriteOwner | QFile::ReadUser | QFile::ReadGroup | QFile::ReadOther);
     }
 
-    LOGI() << "success save file: " << currentPath;
+    LOGI() << "success save file: " << targetContainerPath;
     return make_ret(Ret::Code::Ok);
 }
 
@@ -545,7 +587,7 @@ mu::Ret NotationProject::makeCurrentFileAsBackup()
         return ret;
     }
 
-    fileSystem()->setAttribute(backupFilePath, system::IFileSystem::Attribute::Hidden);
+    fileSystem()->setAttribute(backupFilePath, io::IFileSystem::Attribute::Hidden);
 
     return ret;
 }

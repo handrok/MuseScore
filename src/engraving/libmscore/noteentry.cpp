@@ -44,6 +44,8 @@
 
 #include "masterscore.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 
@@ -160,7 +162,7 @@ Note* Score::addPitch(NoteVal& nval, bool addFlag, InputState* externalInputStat
         ChordRest* c = toChordRest(is.lastSegment()->element(is.track()));
 
         if (c == 0 || !c->isChord()) {
-            qDebug("Score::addPitch: cr %s", c ? c->typeName() : "zero");
+            LOGD("Score::addPitch: cr %s", c ? c->typeName() : "zero");
             return 0;
         }
         Note* note = addNote(toChord(c), nval, /* forceAccidental */ false, is.articulationIds(), externalInputState);
@@ -224,7 +226,7 @@ Note* Score::addPitch(NoteVal& nval, bool addFlag, InputState* externalInputStat
             std::vector<Note*> notes = chord->notes();
             // break all ties into current chord
             // these will exist only if user explicitly moved cursor to a tied-into note
-            // in ordinary use, cursor will autoamtically skip past these during note entry
+            // in ordinary use, cursor will automatically skip past these during note entry
             for (Note* n : notes) {
                 if (n->tieBack()) {
                     undoRemoveElement(n->tieBack());
@@ -305,7 +307,7 @@ Note* Score::addPitch(NoteVal& nval, bool addFlag, InputState* externalInputStat
                 is.slur()->setEndElement(e);
             }
         } else {
-            qDebug("addPitch: cannot find slur note");
+            LOGD("addPitch: cannot find slur note");
         }
     }
     if (is.usingNoteEntryMethod(NoteEntryMethod::REPITCH)) {
@@ -335,7 +337,7 @@ void Score::putNote(const PointF& pos, bool replace, bool insert)
 {
     Position p;
     if (!getPosition(&p, pos, _is.voice())) {
-        qDebug("cannot put note here, get position failed");
+        LOGD("cannot put note here, get position failed");
         return;
     }
     Score* score = p.segment->score();
@@ -441,7 +443,7 @@ void Score::putNote(const Position& p, bool replace)
                                 nval.fret = fret;
                                 nval.pitch = stringData->getPitch(nval.string, nval.fret, st);
                             } else {
-                                qDebug("can't increase fret to %d", fret);
+                                LOGD("can't increase fret to %d", fret);
                             }
                         }
                         // set fret number (original or combined) in all linked notes
@@ -561,7 +563,7 @@ void Score::repitchNote(const Position& p, bool replace)
         std::vector<Note*> notes = chord->notes();
         // break all ties into current chord
         // these will exist only if user explicitly moved cursor to a tied-into note
-        // in ordinary use, cursor will autoamtically skip past these during note entry
+        // in ordinary use, cursor will automatically skip past these during note entry
         for (Note* n : notes) {
             if (n->tieBack()) {
                 undoRemoveElement(n->tieBack());

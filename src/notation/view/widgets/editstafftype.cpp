@@ -98,7 +98,7 @@ EditStaffType::EditStaffType(QWidget* parent)
         Q_ASSERT_X(false, "EditStaffType::EditStaffType", "Error in opening sample standard file for preview");
     }
 
-    // load a sample tabulature score in preview
+    // load a sample tablature score in preview
     sc = mu::engraving::compat::ScoreAccess::createMasterScoreWithDefaultStyle();
     if (loadScore(sc, ":/view/resources/data/tab_sample.mscx")) {
         tabPreview->setScore(sc);
@@ -305,7 +305,7 @@ void EditStaffType::setValues()
         durFontSize->setValue(staffType.durationFontSize());
         durY->setValue(staffType.durationFontUserY());
         // convert combined values of genDurations and slashStyle/stemless into noteValuesx radio buttons
-        // Sbove/Below, Beside/Through and minim are only used if stems-and-beams
+        // Above/Below, Beside/Through and minim are only used if stems-and-beams
         // but set them from stt values anyway, to ensure preset matching
         stemAboveRadio->setChecked(!staffType.stemsDown());
         stemBelowRadio->setChecked(staffType.stemsDown());
@@ -679,7 +679,7 @@ QString EditStaffType::createUniqueStaffTypeName(Ms::StaffGroup group)
 
 void EditStaffType::savePresets()
 {
-    qDebug("savePresets");
+    LOGD("savePresets");
 }
 
 //---------------------------------------------------------
@@ -688,7 +688,7 @@ void EditStaffType::savePresets()
 
 void EditStaffType::loadPresets()
 {
-    qDebug("loadPresets");
+    LOGD("loadPresets");
 }
 
 void EditStaffType::resetToTemplateClicked()
@@ -706,5 +706,5 @@ void EditStaffType::resetToTemplateClicked()
 
 void EditStaffType::addToTemplatesClicked()
 {
-    qDebug("not implemented: add to templates");
+    LOGD("not implemented: add to templates");
 }

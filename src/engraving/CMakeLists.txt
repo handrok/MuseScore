@@ -39,7 +39,9 @@ set(MODULE_SRC
 
     ${CMAKE_CURRENT_LIST_DIR}/rw/xml.h
     ${CMAKE_CURRENT_LIST_DIR}/rw/xmlreader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/rw/xmlreader.h
     ${CMAKE_CURRENT_LIST_DIR}/rw/xmlwriter.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/rw/xmlwriter.h
     ${CMAKE_CURRENT_LIST_DIR}/rw/xmlvalue.cpp
     ${CMAKE_CURRENT_LIST_DIR}/rw/xmlvalue.h
     ${CMAKE_CURRENT_LIST_DIR}/rw/readcontext.cpp
@@ -218,6 +220,7 @@ set(MODULE_INCLUDE
 set(MODULE_DEF ${ENGRAVING_INFRASTRUCTURE_DEF})
 set(MODULE_LINK ${ENGRAVING_INFRASTRUCTURE_LINK} qzip)
 
+set(MODULE_USE_UNITY_NONE ON)
 include(SetupModule)
 
 set_property(TARGET ${MODULE} APPEND PROPERTY AUTOMOC_MACRO_NAMES "BEGIN_QT_REGISTERED_ENUM")

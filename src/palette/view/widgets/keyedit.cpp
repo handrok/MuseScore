@@ -231,9 +231,9 @@ void KeyCanvas::dragEnterEvent(QDragEnterEvent* event)
         dragElement->layout();
     } else {
         if (MScore::debugMode) {
-            qDebug("KeyCanvas::dragEnterEvent: formats:");
+            LOGD("KeyCanvas::dragEnterEvent: formats:");
             foreach (const QString& s, event->mimeData()->formats()) {
-                qDebug("   %s", qPrintable(s));
+                LOGD("   %s", qPrintable(s));
             }
         }
     }
@@ -337,7 +337,7 @@ KeyEditor::KeyEditor(QWidget* parent)
     connect(m_keySigPaletteWidget, &PaletteWidget::changed, this, &KeyEditor::setDirty);
 
     //
-    // set all "buildin" key signatures to read only
+    // set all "builtin" key signatures to read only
     //
     int n = m_keySigPaletteWidget->actualCellCount();
     for (int i = 0; i < n; ++i) {
@@ -379,7 +379,7 @@ void KeyEditor::addClicked()
     for (Accidental* a : al) {
         CustDef c;
         c.sym       = a->symbol();
-        int idx     = e.customKeyDefs().size();
+        size_t idx  = e.customKeyDefs().size();
         PointF pos  = a->ipos();
         pos.rx()   -= xoff;
         c.xAlt      = pos.x() / spatium - idx * e.xstep();

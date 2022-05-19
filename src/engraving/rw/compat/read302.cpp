@@ -45,6 +45,8 @@
 #include "readchordlisthook.h"
 #include "readstyle.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 using namespace mu::engraving::rw;
@@ -66,7 +68,7 @@ bool Read302::readScore302(Ms::Score* score, XmlReader& e, ReadContext& ctx)
     }
 
     while (e.readNextStartElement()) {
-        e.setTrack(mu::nidx);
+        ctx.setTrack(mu::nidx);
         const QStringRef& tag(e.name());
         if (tag == "Staff") {
             StaffRW::readStaff(score, e, ctx);
@@ -168,7 +170,7 @@ bool Read302::readScore302(Ms::Score* score, XmlReader& e, ReadContext& ctx)
                     ex->read(e);
                     mScore->excerpts().push_back(ex);
                 } else {
-                    qDebug("Score::read(): part cannot have parts");
+                    LOGD("Score::read(): part cannot have parts");
                     e.skipCurrentElement();
                 }
             }
@@ -176,14 +178,14 @@ bool Read302::readScore302(Ms::Score* score, XmlReader& e, ReadContext& ctx)
             int strack = e.intAttribute("sTrack",   -1);
             int dtrack = e.intAttribute("dstTrack", -1);
             if (strack != -1 && dtrack != -1) {
-                e.tracks().insert({ strack, dtrack });
+                ctx.tracks().insert({ strack, dtrack });
             }
             e.skipCurrentElement();
         } else if (tag == "Score") {            // recursion
             if (MScore::noExcerpts) {
                 e.skipCurrentElement();
             } else {
-                e.tracks().clear();             // ???
+                ctx.tracks().clear();             // ???
                 MasterScore* m = score->masterScore();
                 Score* s = m->createScore();
 
@@ -191,13 +193,17 @@ bool Read302::readScore302(Ms::Score* score, XmlReader& e, ReadContext& ctx)
 
                 Excerpt* ex = new Excerpt(m);
                 ex->setExcerptScore(s);
-                e.setLastMeasure(nullptr);
+                ctx.setLastMeasure(nullptr);
 
-                ReadContext exCtx(s);
-                readScore302(s, e, exCtx);
+                Score* curScore = e.context()->score();
+                e.context()->setScore(s);
+
+                readScore302(s, e, *e.context());
+
+                e.context()->setScore(curScore);
 
                 s->linkMeasures(m);
-                ex->setTracksMapping(e.tracks());
+                ex->setTracksMapping(ctx.tracks());
                 m->addExcerpt(ex);
             }
         } else if (tag == "name") {
@@ -212,18 +218,18 @@ bool Read302::readScore302(Ms::Score* score, XmlReader& e, ReadContext& ctx)
             } else if (s == "system") {
                 score->setLayoutMode(LayoutMode::SYSTEM);
             } else {
-                qDebug("layoutMode: %s", qPrintable(s));
+                LOGD("layoutMode: %s", qPrintable(s));
             }
         } else {
             e.unknown();
         }
     }
-    e.reconnectBrokenConnectors();
-    if (e.error() != QXmlStreamReader::NoError) {
-        qDebug("%s: xml read error at line %lld col %lld: %s",
-               qPrintable(e.getDocName()), e.lineNumber(), e.columnNumber(),
-               e.name().toUtf8().data());
-        if (e.error() == QXmlStreamReader::CustomError) {
+    e.context()->reconnectBrokenConnectors();
+    if (e.error() != XmlStreamReader::NoError) {
+        LOGD("%s: xml read error at line %lld col %lld: %s",
+             qPrintable(e.getDocName()), e.lineNumber(), e.columnNumber(),
+             e.name().toUtf8().data());
+        if (e.error() == XmlStreamReader::CustomError) {
             MScore::lastError = e.errorString();
         } else {
             MScore::lastError = QObject::tr("XML read error at line %1, column %2: %3").arg(e.lineNumber()).arg(e.columnNumber()).arg(
@@ -271,7 +277,7 @@ Score::FileError Read302::read302(Ms::MasterScore* masterScore, XmlReader& e, Re
             masterScore->setMscoreRevision(e.readIntHex());
         } else if (tag == "Score") {
             if (!readScore302(masterScore, e, ctx)) {
-                if (e.error() == QXmlStreamReader::CustomError) {
+                if (e.error() == XmlStreamReader::CustomError) {
                     return Score::FileError::FILE_CRITICALLY_CORRUPTED;
                 }
                 return Score::FileError::FILE_BAD_FORMAT;

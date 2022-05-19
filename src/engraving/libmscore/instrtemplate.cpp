@@ -22,6 +22,8 @@
 
 #include "instrtemplate.h"
 
+#include <QFile>
+
 #include "translation.h"
 #include "containers.h"
 #include "style/style.h"
@@ -34,6 +36,8 @@
 #include "stringdata.h"
 #include "utils.h"
 #include "scoreorder.h"
+
+#include "log.h"
 
 using namespace mu;
 using namespace mu::engraving;
@@ -159,7 +163,7 @@ void InstrumentGroup::read(XmlReader& e)
             if (t == 0) {
                 t = new InstrumentTemplate;
                 t->articulation.insert(t->articulation.end(), articulation.begin(), articulation.end());             // init with global articulation
-                t->sequenceOrder = instrumentTemplates.size();
+                t->sequenceOrder = static_cast<int>(instrumentTemplates.size());
                 instrumentTemplates.push_back(t);
             }
             t->read(e);
@@ -169,7 +173,7 @@ void InstrumentGroup::read(XmlReader& e)
                 InstrumentTemplate* t = new InstrumentTemplate(*ttt);
                 instrumentTemplates.push_back(t);
             } else {
-                qDebug("instrument reference not found <%s>", e.text().toUtf8().data());
+                LOGD("instrument reference not found <%s>", e.text().toUtf8().data());
             }
         } else if (tag == "name") {
             name = qtrc("InstrumentsXML", e.readElementText().toUtf8().data());
@@ -471,7 +475,7 @@ void InstrumentTemplate::read(XmlReader& e)
             extended = e.readInt();
         } else if (tag == "staves") {
             staffCount = e.readInt();
-            bracketSpan[0] = staffCount;
+            bracketSpan[0] = static_cast<int>(staffCount);
 //                  for (int i = 0; i < staves-1; ++i)
 //                        barlineSpan[i] = true;
         } else if (tag == "clef") {             // sets both transposing and concert clef
@@ -553,8 +557,8 @@ void InstrumentTemplate::read(XmlReader& e)
         } else if (tag == "Articulation") {
             MidiArticulation a;
             a.read(e);
-            int n = articulation.size();
-            int i;
+            size_t n = articulation.size();
+            size_t i;
             for (i = 0; i < n; ++i) {
                 if (articulation[i].name == a.name) {
                     articulation[i] = a;
@@ -591,7 +595,7 @@ void InstrumentTemplate::read(XmlReader& e)
             if (ttt) {
                 init(*ttt);
             } else {
-                qDebug("InstrumentTemplate:: init instrument <%s> not found", qPrintable(val));
+                LOGD("InstrumentTemplate:: init instrument <%s> not found", qPrintable(val));
             }
         } else if (tag == "musicXMLid") {
             musicXMLid = e.readElementText();
@@ -629,7 +633,7 @@ void InstrumentTemplate::read(XmlReader& e)
     }
 
     if (staffCount == 0) {
-        qDebug(" 2Instrument: staves == 0 <%s>", qPrintable(id));
+        LOGD(" 2Instrument: staves == 0 <%s>", qPrintable(id));
     }
 }
 
@@ -676,7 +680,7 @@ bool loadInstrumentTemplates(const QString& instrTemplates)
 {
     QFile qf(instrTemplates);
     if (!qf.open(QIODevice::Text | QIODevice::ReadOnly)) {
-        qDebug("cannot load instrument templates at <%s>", qPrintable(instrTemplates));
+        LOGD("cannot load instrument templates at <%s>", qPrintable(instrTemplates));
         return false;
     }
 

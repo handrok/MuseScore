@@ -117,9 +117,28 @@ QByteArray MscReader::readStyleFile() const
     return fileData("score_style.mss");
 }
 
+QString MscReader::mainFileName() const
+{
+    if (!m_params.mainFileName.isEmpty()) {
+        return m_params.mainFileName;
+    }
+
+    QString name = "score.mscx";
+    if (m_params.filePath.isEmpty()) {
+        return name;
+    }
+
+    QString completeBaseName = QFileInfo(m_params.filePath).completeBaseName();
+    if (completeBaseName.isEmpty()) {
+        return name;
+    }
+
+    return completeBaseName + ".mscx";
+}
+
 QByteArray MscReader::readScoreFile() const
 {
-    QString mscxFileName = QFileInfo(m_params.filePath).completeBaseName() + ".mscx";
+    QString mscxFileName = mainFileName();
     QByteArray data = fileData(mscxFileName);
     if (data.isEmpty() && reader()->isContainer()) {
         QStringList files = reader()->fileList();
@@ -306,12 +325,13 @@ bool MscReader::DirReader::open(QIODevice* device, const QString& filePath)
         return false;
     }
 
-    m_rootPath = QFileInfo(filePath).absolutePath();
-
-    if (!QFileInfo::exists(m_rootPath)) {
-        LOGD() << "not exists path: " << m_rootPath;
+    QFileInfo fi(filePath);
+    if (!fi.exists()) {
+        LOGD() << "not exists path: " << filePath;
         return false;
     }
+
+    m_rootPath = containerPath(filePath).toQString();
 
     return true;
 }
@@ -448,6 +468,7 @@ QByteArray MscReader::XmlFileReader::fileData(const QString& fileName) const
 
             QStringRef file = xml.attributes().value("name");
             if (file != fileName) {
+                xml.skipCurrentElement();
                 continue;
             }
 

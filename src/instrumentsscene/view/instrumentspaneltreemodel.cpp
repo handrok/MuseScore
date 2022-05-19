@@ -414,6 +414,21 @@ bool InstrumentsPanelTreeModel::moveRows(const QModelIndex& sourceParent, int so
     return true;
 }
 
+void InstrumentsPanelTreeModel::toggleVisibilityOfSelectedRows(bool visible)
+{
+    if (!m_selectionModel || !m_selectionModel->hasSelection()) {
+        return;
+    }
+
+    QModelIndexList selectedIndexes = m_selectionModel->selectedIndexes();
+
+    for (QModelIndex index : selectedIndexes) {
+        AbstractInstrumentsPanelTreeItem* item = modelIndexToItem(index);
+
+        item->setIsVisible(visible);
+    }
+}
+
 QItemSelectionModel* InstrumentsPanelTreeModel::selectionModel() const
 {
     return m_selectionModel;
@@ -503,13 +518,13 @@ void InstrumentsPanelTreeModel::setIsMovingUpAvailable(bool isMovingUpAvailable)
     emit isMovingUpAvailableChanged(m_isMovingUpAvailable);
 }
 
-void InstrumentsPanelTreeModel::setIsMovingDownAvailable(bool isMoveingDownAvailable)
+void InstrumentsPanelTreeModel::setIsMovingDownAvailable(bool isMovingDownAvailable)
 {
-    if (m_isMovingDownAvailable == isMoveingDownAvailable) {
+    if (m_isMovingDownAvailable == isMovingDownAvailable) {
         return;
     }
 
-    m_isMovingDownAvailable = isMoveingDownAvailable;
+    m_isMovingDownAvailable = isMovingDownAvailable;
     emit isMovingDownAvailableChanged(m_isMovingDownAvailable);
 }
 

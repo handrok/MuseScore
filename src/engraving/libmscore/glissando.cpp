@@ -75,7 +75,7 @@ const std::array<const char*, 2> Glissando::glissandoTypeNames = {
 };
 
 //=========================================================
-//   GlisandoSegment
+//   GlissandoSegment
 //=========================================================
 
 GlissandoSegment::GlissandoSegment(Glissando* sp, System* parent)
@@ -255,7 +255,7 @@ void Glissando::layout()
     }
     SLine::layout();
     if (spannerSegments().empty()) {
-        qDebug("no segments");
+        LOGD("no segments");
         return;
     }
     setPos(0.0, 0.0);
@@ -412,7 +412,7 @@ void Glissando::layout()
 
 void Glissando::write(XmlWriter& xml) const
 {
-    if (!xml.canWrite(this)) {
+    if (!xml.context()->canWrite(this)) {
         return;
     }
     xml.startObject(this);
@@ -440,7 +440,7 @@ void Glissando::read(XmlReader& e)
     eraseSpannerSegments();
 
     if (score()->mscVersion() < 301) {
-        e.addSpanner(e.intAttribute("id", -1), this);
+        e.context()->addSpanner(e.intAttribute("id", -1), this);
     }
 
     _showText = false;
@@ -559,7 +559,7 @@ Note* Glissando::guessInitialNote(Chord* chord)
         }
         segm = segm->prev1();
     }
-    qDebug("no first note for glissando found");
+    LOGD("no first note for glissando found");
     return 0;
 }
 
@@ -659,7 +659,7 @@ Note* Glissando::guessFinalNote(Chord* chord)
         }
         segm = segm->next1();
     }
-    qDebug("no second note for glissando found");
+    LOGD("no second note for glissando found");
     return 0;
 }
 

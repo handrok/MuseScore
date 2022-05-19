@@ -61,7 +61,7 @@ int voiceLimit()
                "MidiVoice::voiceLimit",
                "Allowed voice count exceeds MuseScore voice limit");
 
-    return allowedVoiceCount;
+    return static_cast<int>(allowedVoiceCount);
 }
 
 #ifdef QT_DEBUG
@@ -1074,13 +1074,13 @@ bool separateVoices(std::multimap<int, MTrack>& tracks, const TimeSigMap* sigmap
         if (chords.empty()) {
             continue;
         }
-        const int userVoiceCount = toIntVoiceCount(
+        const auto userVoiceCount = toIntVoiceCount(
             opers.data()->trackOpers.maxVoiceCount.value(mtrack.indexOfOperation));
         // pass current track index through MidiImportOperations
         // for further usage
         MidiOperations::CurrentTrackSetter setCurrentTrack{ opers, mtrack.indexOfOperation };
 
-        if (userVoiceCount > 1 && userVoiceCount <= voiceLimit()) {
+        if (userVoiceCount > 1 && static_cast<int>(userVoiceCount) <= voiceLimit()) {
 #ifdef QT_DEBUG
             Q_ASSERT_X(MidiTuplet::areAllTupletsReferenced(mtrack.chords, mtrack.tuplets),
                        "MidiVoice::separateVoices",

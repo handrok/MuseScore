@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "gpnote.h"
-#include "gprhytm.h"
+#include "gprhythm.h"
 
 namespace Ms {
 class GPBeat
@@ -43,6 +43,9 @@ public:
     enum class Wah {
         None, Open, Closed
     };
+    enum class Golpe {
+        None, Finger, Thumb
+    };
     enum class Rasgueado {
         None, II_1, MII_1, MII_2, PMP_2, PEI_1, PEI_2, PAI_1, PAI_2, AMI_1,
         AMI_2, PPP_1, AMII_1, AMIP_1, EAMI_1, EAMII_1, PEAMI_1
@@ -53,8 +56,8 @@ public:
     };
 
     struct Tremolo {
-        int enumerator{ -1 };
-        int denumerator{ -1 };
+        int numerator{ -1 };
+        int denominator{ -1 };
     };
 
     struct Barre {
@@ -63,7 +66,7 @@ public:
     };
 
     void addGPNote(const std::shared_ptr<GPNote>& n) { _notes.push_back(n); }
-    void addGPRhytm(const std::shared_ptr<GPRhytm>& n) { _rhytm = n; }
+    void addGPRhythm(const std::shared_ptr<GPRhythm>& n) { _rhythm = n; }
     void setDynamic(GPBeat::DynamicType t) { _dynamic = t; }
     void setLegatoType(GPBeat::LegatoType t) { _legato = t; }
     void setOttavaType(GPBeat::OttavaType ottavaType) { _ottavaType = ottavaType; }
@@ -74,8 +77,8 @@ public:
     DynamicType dynamic() const { return _dynamic; }
     LegatoType legatoType() const { return _legato; }
 
-    std::pair<int, GPRhytm::RhytmType> lenth() const;
-    GPRhytm::Tuplet tuplet() const;
+    std::pair<int, GPRhythm::RhytmType> lenth() const;
+    GPRhythm::Tuplet tuplet() const;
 
     void setSlapped(bool s) { _slapped = s; }
     bool slapped() const { return _slapped; }
@@ -110,8 +113,8 @@ public:
     void setHairpin(Hairpin h) { _hairpin = h; }
     Hairpin hairpin() const { return _hairpin; }
 
-    void setRasgueado(Rasgueado r) { _rasqueado = r; }
-    Rasgueado rasgueado() const { return _rasqueado; }
+    void setRasgueado(Rasgueado r) { _rasgueado = r; }
+    Rasgueado rasgueado() const { return _rasgueado; }
 
     void setPickStroke(PickStroke p) { _pickStroke = p; }
     PickStroke pickStroke() const { return _pickStroke; }
@@ -121,6 +124,9 @@ public:
 
     void setWah(Wah w) { _wah = w; }
     Wah wah() const { return _wah; }
+
+    void setGolpe(Golpe g) { m_golpe = g; }
+    Golpe golpe() const { return m_golpe; }
 
     void setBarreFret(int v) { _barre.fret = v; }
     void setBarreString(int v) { _barre.string = v; }
@@ -193,7 +199,7 @@ private:
     std::vector<std::shared_ptr<GPNote> > _notes;
     std::map<Key, std::string> _lyrics;
     std::map<Key, int> _diagramIdx;
-    std::shared_ptr<GPRhytm> _rhytm;
+    std::shared_ptr<GPRhythm> _rhythm;
     DynamicType _dynamic{ DynamicType::MF };
     LegatoType _legato{ LegatoType::None };
     OttavaType _ottavaType = OttavaType::None;
@@ -207,10 +213,11 @@ private:
     VibratoWTremBar _vibrato{ VibratoWTremBar::None };
     Fadding _fadding{ Fadding::None };
     Hairpin _hairpin{ Hairpin::None };
-    Rasgueado _rasqueado{ Rasgueado::None };
+    Rasgueado _rasgueado{ Rasgueado::None };
     PickStroke _pickStroke{ PickStroke::None };
     Tremolo _tremolo;
-    Wah _wah{ Wah::None };
+    Wah _wah = Wah::None;
+    Golpe m_golpe = Golpe::None;
     Barre _barre;
     double _arpeggioStretch = 0.0;
 };

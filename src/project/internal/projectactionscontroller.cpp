@@ -120,7 +120,7 @@ Ret ProjectActionsController::openProject(const io::path& projectPath_)
 {
     //! NOTE This method is synchronous,
     //! but inside `multiInstancesProvider` there can be an event loop
-    //! to wait for the responces from other instances, accordingly,
+    //! to wait for the responses from other instances, accordingly,
     //! the events (like user click) can be executed and this method can be called several times,
     //! before the end of the current call.
     //! So we ignore all subsequent calls until the current one completes.
@@ -204,13 +204,11 @@ Ret ProjectActionsController::doOpenProject(const io::path& filePath)
     bool isNewlyCreated = projectAutoSaver()->isAutosaveOfNewlyCreatedProject(filePath);
     if (isNewlyCreated) {
         project->markAsNewlyCreated();
+    } else {
+        prependToRecentScoreList(filePath);
     }
 
     globalContext()->setCurrentProject(project);
-
-    if (!project->isNewlyCreated()) {
-        prependToRecentScoreList(filePath);
-    }
 
     return openPageIfNeed(NOTATION_PAGE_URI);
 }
@@ -252,7 +250,7 @@ void ProjectActionsController::newProject()
 {
     //! NOTE This method is synchronous,
     //! but inside `multiInstancesProvider` there can be an event loop
-    //! to wait for the responces from other instances, accordingly,
+    //! to wait for the responses from other instances, accordingly,
     //! the events (like user click) can be executed and this method can be called several times,
     //! before the end of the current call.
     //! So we ignore all subsequent calls until the current one completes.
@@ -595,7 +593,7 @@ void ProjectActionsController::printScore()
 
 io::path ProjectActionsController::selectScoreOpeningFile()
 {
-    QString allExt = "*.mscz *.mxl *.musicxml *.xml *.mid *.midi *.kar *.md *.mgu *.sgu *.cap *.capx"
+    QString allExt = "*.mscz *.mxl *.musicxml *.xml *.mid *.midi *.kar *.md *.mgu *.sgu *.cap *.capx "
                      "*.ove *.scw *.bmw *.bww *.gtp *.gp3 *.gp4 *.gp5 *.gpx *.gp *.ptb *.mscx *.mscs *.mscz~";
 
     QStringList filter;

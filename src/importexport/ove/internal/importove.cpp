@@ -72,6 +72,8 @@
 #include "modularity/ioc.h"
 #include "importexport/ove/ioveconfiguration.h"
 
+#include "log.h"
+
 namespace ove {
 static std::shared_ptr<mu::iex::ove::IOveConfiguration> configuration()
 {
@@ -221,7 +223,7 @@ private:
     void convertNotes(Measure* measure, int part, int staff, int track);
     void convertArticulation(Measure* measure, Chord* cr, int track, int absTick, ovebase::Articulation* art);
     void convertLyrics(Measure* measure, int part, int staff, int track);
-    void convertHarmonys(Measure* measure, int part, int staff, int track);
+    void convertHarmonies(Measure* measure, int part, int staff, int track);
     void convertRepeats(Measure* measure, int part, int staff, int track);
     void convertDynamics(Measure* measure, int part, int staff, int track);
     void convertExpressions(Measure* measure, int part, int staff, int track);
@@ -738,7 +740,7 @@ void OveToMScore::convertTrackElements(int track)
 
                     ottava->setTick(Fraction::fromTicks(absTick));
                 } else {
-                    qDebug("overlapping octave-shift not supported");
+                    LOGD("overlapping octave-shift not supported");
                     delete ottava;
                     ottava = 0;
                 }
@@ -749,7 +751,7 @@ void OveToMScore::convertTrackElements(int track)
                     ottava->staff()->updateOttava();
                     ottava = 0;
                 } else {
-                    qDebug("octave-shift stop without start");
+                    LOGD("octave-shift stop without start");
                 }
             }
         }
@@ -1223,7 +1225,7 @@ void OveToMScore::convertMeasure(Measure* measure)
                 convertMeasureMisc(measure, i, j, trackIndex);
                 convertNotes(measure, i, j, trackIndex);
                 convertLyrics(measure, i, j, trackIndex);
-                convertHarmonys(measure, i, j, trackIndex);
+                convertHarmonies(measure, i, j, trackIndex);
                 convertRepeats(measure, i, j, trackIndex);
                 convertDynamics(measure, i, j, trackIndex);
                 convertExpressions(measure, i, j, trackIndex);
@@ -1618,7 +1620,7 @@ void OveToMScore::convertNotes(Measure* measure, int part, int staff, int track)
                     Drumset* drumset = getDrumset(m_score, part);
                     if (drumset != 0) {
                         if (!drumset->isValid(pitch) || pitch == -1) {
-                            qDebug("unmapped drum note 0x%02x %d", note->pitch(), note->pitch());
+                            LOGD("unmapped drum note 0x%02x %d", note->pitch(), note->pitch());
                         } else {
                             note->setHeadGroup(drumset->noteHead(pitch));
                             int line = drumset->line(pitch);
@@ -2075,17 +2077,17 @@ void OveToMScore::convertLyrics(Measure* measure, int part, int staff, int track
     }
 }
 
-void OveToMScore::convertHarmonys(Measure* measure, int part, int staff, int track)
+void OveToMScore::convertHarmonies(Measure* measure, int part, int staff, int track)
 {
     ovebase::MeasureData* measureData = m_ove->getMeasureData(part, staff, measure->no());
     if (measureData == 0) {
         return;
     }
 
-    QList<ovebase::MusicData*> harmonys = measureData->getMusicDatas(ovebase::MusicDataType::Harmony);
+    QList<ovebase::MusicData*> harmonies = measureData->getMusicDatas(ovebase::MusicDataType::Harmony);
 
-    for (int i = 0; i < harmonys.size(); ++i) {
-        ovebase::Harmony* harmonyPtr = static_cast<ovebase::Harmony*>(harmonys[i]);
+    for (int i = 0; i < harmonies.size(); ++i) {
+        ovebase::Harmony* harmonyPtr = static_cast<ovebase::Harmony*>(harmonies[i]);
         int absTick = m_mtt->getTick(measure->no(), harmonyPtr->getTick());
 
         Harmony* harmony = Factory::createHarmony(m_score->dummy()->segment());

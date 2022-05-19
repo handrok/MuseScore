@@ -128,14 +128,28 @@ void MscWriter::writeStyleFile(const QByteArray& data)
     addFileData("score_style.mss", data);
 }
 
+QString MscWriter::mainFileName() const
+{
+    if (!m_params.mainFileName.isEmpty()) {
+        return m_params.mainFileName;
+    }
+
+    QString name = "score.mscx";
+    if (m_params.filePath.isEmpty()) {
+        return name;
+    }
+
+    QString completeBaseName = QFileInfo(m_params.filePath).completeBaseName();
+    if (completeBaseName.isEmpty()) {
+        return name;
+    }
+
+    return completeBaseName + ".mscx";
+}
+
 void MscWriter::writeScoreFile(const QByteArray& data)
 {
-    QString completeBaseName = QFileInfo(m_params.filePath).completeBaseName();
-    IF_ASSERT_FAILED(!completeBaseName.isEmpty()) {
-        completeBaseName = "score";
-    }
-    QString fileName = completeBaseName + ".mscx";
-    addFileData(fileName, data);
+    addFileData(mainFileName(), data);
 }
 
 void MscWriter::addExcerptStyleFile(const QString& name, const QByteArray& data)
@@ -182,13 +196,13 @@ void MscWriter::writeViewSettingsJsonFile(const QByteArray& data)
 
 void MscWriter::writeMeta()
 {
-    if (m_meta.isWrited) {
+    if (m_meta.isWritten) {
         return;
     }
 
     writeContainer(m_meta.files);
 
-    m_meta.isWrited = true;
+    m_meta.isWritten = true;
 }
 
 void MscWriter::writeContainer(const std::vector<QString>& paths)
@@ -298,14 +312,12 @@ bool MscWriter::DirWriter::open(QIODevice* device, const QString& filePath)
         return false;
     }
 
-    QFileInfo fi(filePath);
-
-    if (fi.absolutePath().isEmpty()) {
+    if (filePath.isEmpty()) {
         LOGE() << "file path is empty";
         return false;
     }
 
-    m_rootPath = fi.absolutePath() + "/" + fi.completeBaseName();
+    m_rootPath = containerPath(filePath).toQString();
 
     QDir dir(m_rootPath);
     if (!dir.removeRecursively()) {

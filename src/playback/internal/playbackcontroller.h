@@ -50,7 +50,7 @@ class PlaybackController : public IPlaybackController, public actions::Actionabl
     INJECT(playback, context::IGlobalContext, globalContext)
     INJECT(playback, IPlaybackConfiguration, configuration)
     INJECT(playback, notation::INotationConfiguration, notationConfiguration)
-    INJECT(playback, audio::IPlayback, playback)
+    INJECT_STATIC(playback, audio::IPlayback, playback)
 
 public:
     void init();
@@ -107,7 +107,7 @@ private:
     void onNotationChanged();
     void onSelectionChanged();
 
-    void togglePlay(const actions::ActionData& args);
+    void togglePlay();
     void rewind(const actions::ActionData& args);
     void play();
     void pause();

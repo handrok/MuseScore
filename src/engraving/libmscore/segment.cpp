@@ -53,6 +53,8 @@
 #include "factory.h"
 #include "masterscore.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 
@@ -531,12 +533,12 @@ void Segment::checkElement(EngravingItem* el, track_idx_t track)
 {
     // generated elements can be overwritten
     if (_elist[track] && !_elist[track]->generated()) {
-        qDebug("add(%s): there is already a %s at track %zu tick %d",
-               el->typeName(),
-               _elist[track]->typeName(),
-               track,
-               tick().ticks()
-               );
+        LOGD("add(%s): there is already a %s at track %zu tick %d",
+             el->typeName(),
+             _elist[track]->typeName(),
+             track,
+             tick().ticks()
+             );
 //            abort();
     }
 }
@@ -547,7 +549,7 @@ void Segment::checkElement(EngravingItem* el, track_idx_t track)
 
 void Segment::add(EngravingItem* el)
 {
-//      qDebug("%p segment %s add(%d, %d, %s)", this, subTypeName(), tick(), el->track(), el->typeName());
+//      LOGD("%p segment %s add(%d, %d, %s)", this, subTypeName(), tick(), el->track(), el->typeName());
 
     if (el->explicitParent() != this) {
         el->setParent(this);
@@ -684,7 +686,7 @@ void Segment::add(EngravingItem* el)
         break;
 
     default:
-        qFatal("Segment::add() unknown %s", el->typeName());
+        ASSERT_X(QString::asprintf("Segment::add() unknown %s", el->typeName()));
         return;
     }
 
@@ -697,7 +699,7 @@ void Segment::add(EngravingItem* el)
 
 void Segment::remove(EngravingItem* el)
 {
-// qDebug("%p Segment::remove %s %p", this, el->typeName(), el);
+// LOGD("%p Segment::remove %s %p", this, el->typeName(), el);
 
     track_idx_t track = el->track();
 
@@ -801,7 +803,7 @@ void Segment::remove(EngravingItem* el)
         break;
 
     default:
-        qFatal("Segment::remove() unknown %s", el->typeName());
+        ASSERT_X(QString::asprintf("Segment::remove() unknown %s", el->typeName()));
         return;
     }
     triggerLayout();
@@ -835,7 +837,7 @@ SegmentType Segment::segmentType(ElementType type)
     case ElementType::BREATH:
         return SegmentType::Breath;
     default:
-        qDebug("Segment:segmentType():  bad type: <%s>", Factory::name(type));
+        LOGD("Segment:segmentType():  bad type: <%s>", Factory::name(type));
         return SegmentType::Invalid;
     }
 }
@@ -1205,7 +1207,7 @@ bool Segment::hasAnnotationOrElement(ElementType type, track_idx_t minTrack, tra
 ///  or nullptr if nothing was found.
 //---------------------------------------------------------
 
-EngravingItem* Segment::findAnnotation(ElementType type, track_idx_t minTrack, track_idx_t maxTrack)
+EngravingItem* Segment::findAnnotation(ElementType type, track_idx_t minTrack, track_idx_t maxTrack) const
 {
     for (EngravingItem* e : _annotations) {
         if (e->type() == type && e->track() >= minTrack && e->track() <= maxTrack) {
@@ -1221,7 +1223,7 @@ EngravingItem* Segment::findAnnotation(ElementType type, track_idx_t minTrack, t
 ///  or nullptr if nothing was found.
 //---------------------------------------------------------
 
-std::vector<EngravingItem*> Segment::findAnnotations(ElementType type, track_idx_t minTrack, track_idx_t maxTrack)
+std::vector<EngravingItem*> Segment::findAnnotations(ElementType type, track_idx_t minTrack, track_idx_t maxTrack) const
 {
     std::vector<EngravingItem*> found;
     for (EngravingItem* e : _annotations) {
@@ -2219,6 +2221,9 @@ void Segment::createShape(staff_idx_t staffIdx)
 {
     Shape& s = _shapes[staffIdx];
     s.clear();
+    if (system() && !system()->staves().at(staffIdx)->show()) {
+        return;
+    }
 
     if (segmentType() & (SegmentType::BarLine | SegmentType::EndBarLine | SegmentType::StartRepeatBarLine | SegmentType::BeginBarLine)) {
         setVisible(true);
@@ -2369,7 +2374,7 @@ std::pair<qreal, qreal> Segment::computeCellWidth(const std::vector<int>& visibl
                 Chord* ch = toChord(cr);
 
                 //! check that gracenote exist. If exist add additional spacing
-                //! to avoid colliding between grace note and previos chord
+                //! to avoid colliding between grace note and previous chord
                 if (!ch->graceNotes().empty()) {
                     Segment* prevSeg = prev();
                     if (prevSeg && prevSeg->segmentType() == SegmentType::ChordRest) {
@@ -2383,7 +2388,7 @@ std::pair<qreal, qreal> Segment::computeCellWidth(const std::vector<int>& visibl
                 }
 
                 //! check that accidental exist in the chord. If exist add additional spacing
-                //! to avoid colliding between grace note and previos chord
+                //! to avoid colliding between grace note and previous chord
                 for (auto note : ch->notes()) {
                     if (note->accidental()) {
                         Segment* prevSeg = prev();

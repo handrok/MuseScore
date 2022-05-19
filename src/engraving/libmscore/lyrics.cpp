@@ -37,6 +37,8 @@
 #include "textedit.h"
 #include "undo.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 
@@ -87,7 +89,7 @@ Lyrics::~Lyrics()
 
 void Lyrics::write(XmlWriter& xml) const
 {
-    if (!xml.canWrite(this)) {
+    if (!xml.context()->canWrite(this)) {
         return;
     }
     xml.startObject(this);
@@ -116,7 +118,7 @@ void Lyrics::read(XmlReader& e)
             e.unknown();
         }
     }
-    if (!isStyled(Pid::OFFSET) && !e.pasteMode()) {
+    if (!isStyled(Pid::OFFSET) && !e.context()->pasteMode()) {
         // fix offset for pre-3.1 scores
         // 3.0: y offset was meaningless if autoplace is set
         QString version = mscoreVersion();
@@ -148,7 +150,7 @@ bool Lyrics::readProperties(XmlReader& e)
         } else if (val == "middle") {
             _syllabic = Syllabic::MIDDLE;
         } else {
-            qDebug("bad syllabic property");
+            LOGD("bad syllabic property");
         }
     } else if (tag == "ticks") {          // obsolete
         _ticks = e.readFraction();     // will fall back to reading integer ticks on older scores
@@ -172,7 +174,7 @@ void Lyrics::add(EngravingItem* el)
 //            _separator.append((Line*)el);           // ignore! Internally managed
 //            ;
 //      else
-    qDebug("Lyrics::add: unknown element %s", el->typeName());
+    LOGD("Lyrics::add: unknown element %s", el->typeName());
 }
 
 //---------------------------------------------------------
@@ -192,7 +194,7 @@ void Lyrics::remove(EngravingItem* el)
             separ->removeUnmanaged();
         }
     } else {
-        qDebug("Lyrics::remove: unknown element %s", el->typeName());
+        LOGD("Lyrics::remove: unknown element %s", el->typeName());
     }
 }
 
@@ -308,7 +310,7 @@ void Lyrics::layout()
         // should have text layout to be able to do it correctly.
         Q_ASSERT(rows() != 0);
         if (!leading.isEmpty() || !trailing.isEmpty()) {
-//                   qDebug("create leading, trailing <%s> -- <%s><%s>", qPrintable(text), qPrintable(leading), qPrintable(trailing));
+//                   LOGD("create leading, trailing <%s> -- <%s><%s>", qPrintable(text), qPrintable(leading), qPrintable(trailing));
             const TextBlock& tb = textBlock(0);
 
             const qreal leadingWidth = tb.xpos(leading.length(), this) - tb.boundingRect().x();
@@ -378,7 +380,7 @@ void Lyrics::scanElements(void* data, void (* func)(void*, EngravingItem*), bool
 {
     func(data, this);
     /* DO NOT ADD EITHER THE LYRICSLINE OR THE SEGMENTS: segments are added through the system each belongs to;
-      LyricsLine is not needed, as it is internally manged.
+      LyricsLine is not needed, as it is internally managed.
       if (_separator)
             _separator->scanElements(data, func, all); */
 }

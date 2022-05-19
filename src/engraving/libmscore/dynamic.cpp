@@ -35,6 +35,8 @@
 #include "undo.h"
 #include "musescoreCore.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 
@@ -229,7 +231,7 @@ bool Dynamic::isVelocityChangeAvailable() const
 
 void Dynamic::write(XmlWriter& xml) const
 {
-    if (!xml.canWrite(this)) {
+    if (!xml.context()->canWrite(this)) {
         return;
     }
     xml.startObject(this);
@@ -369,7 +371,7 @@ void Dynamic::setDynamicType(const QString& tag)
             return;
         }
     }
-    qDebug("setDynamicType: other <%s>", qPrintable(tag));
+    LOGD("setDynamicType: other <%s>", qPrintable(tag));
     setDynamicType(DynamicType::OTHER);
     setXmlText(tag);
 }

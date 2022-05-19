@@ -197,8 +197,8 @@ public:
     void clearAnnotations();
     void removeAnnotation(EngravingItem* e);
     bool hasAnnotationOrElement(ElementType type, track_idx_t minTrack, track_idx_t maxTrack) const;
-    EngravingItem* findAnnotation(ElementType type, track_idx_t minTrack, track_idx_t maxTrack);
-    std::vector<EngravingItem*> findAnnotations(ElementType type, track_idx_t minTrack, track_idx_t maxTrack);
+    EngravingItem* findAnnotation(ElementType type, track_idx_t minTrack, track_idx_t maxTrack) const;
+    std::vector<EngravingItem*> findAnnotations(ElementType type, track_idx_t minTrack, track_idx_t maxTrack) const;
     bool hasElements() const;
     bool hasElements(track_idx_t minTrack, track_idx_t maxTrack) const;
     bool allElementsInvisible() const;
@@ -261,7 +261,7 @@ public:
      */
     std::pair<qreal, qreal> computeCellWidth(const std::vector<int>& visibleParts) const;
 
-    /*! \brief get among all ChordRests of segment the ChordRest with minimun ticks,
+    /*! \brief get among all ChordRests of segment the ChordRest with minimum ticks,
     * take into account visibleParts
     */
     static ChordRest* ChordRestWithMinDuration(const Segment* seg, const std::vector<int>& visibleParts);

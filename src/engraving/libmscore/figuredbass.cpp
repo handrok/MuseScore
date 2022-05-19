@@ -21,6 +21,9 @@
  */
 
 #include "figuredbass.h"
+
+#include <QFile>
+
 #include "draw/fontmetrics.h"
 #include "rw/xml.h"
 #include "score.h"
@@ -34,6 +37,7 @@
 #include "score.h"
 #include "factory.h"
 
+#include "log.h"
 #if defined(Q_OS_IOS)
 extern "C" const char* resourcePath();
 #endif
@@ -1063,7 +1067,7 @@ Sid FiguredBass::getPropertyStyle(Pid id) const
 
 void FiguredBass::write(XmlWriter& xml) const
 {
-    if (!xml.canWrite(this)) {
+    if (!xml.context()->canWrite(this)) {
         return;
     }
     xml.startObject(this);
@@ -1207,7 +1211,7 @@ void FiguredBass::layoutLines()
         }
     }
     if (!m || !nextSegm) {
-        qDebug("FiguredBass layout: no segment found for tick %d", nextTick.ticks());
+        LOGD("FiguredBass layout: no segment found for tick %d", nextTick.ticks());
         _lineLengths.resize(1);                             // be sure to always have
         _lineLengths[0] = 0;                                // at least 1 item in array
         return;
@@ -1249,10 +1253,10 @@ void FiguredBass::layoutLines()
             len = x - pageX();
         } else if (i > 0 && i != sysIdx2) {
             // middle line
-            qDebug("FiguredBass: duration indicator middle line not implemented");
+            LOGD("FiguredBass: duration indicator middle line not implemented");
         } else if (i == sysIdx2) {
             // end line
-            qDebug("FiguredBass: duration indicator end line not implemented");
+            LOGD("FiguredBass: duration indicator end line not implemented");
         }
         // store length item, reusing array items if already present
         if (_lineLengths.size() <= segIdx) {
@@ -1688,7 +1692,7 @@ bool FiguredBass::readConfigFile(const QString& fileName)
     QFile fi(path);
     if (!fi.open(QIODevice::ReadOnly)) {
         MScore::lastError = QObject::tr("Cannot open figured bass description:\n%1\n%2").arg(fi.fileName(), fi.errorString());
-        qDebug("FiguredBass::read failed: <%s>", qPrintable(path));
+        LOGD("FiguredBass::read failed: <%s>", qPrintable(path));
         return false;
     }
     XmlReader e(&fi);

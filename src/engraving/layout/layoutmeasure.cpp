@@ -40,6 +40,8 @@
 #include "layoutchords.h"
 #include "layouttremolo.h"
 
+#include "log.h"
+
 using namespace mu::engraving;
 using namespace Ms;
 
@@ -562,7 +564,7 @@ static void layoutDrumsetChord(Chord* c, const Drumset* drumset, const StaffType
     for (Note* note : c->notes()) {
         int pitch = note->pitch();
         if (!drumset->isValid(pitch)) {
-            // qDebug("unmapped drum note %d", pitch);
+            // LOGD("unmapped drum note %d", pitch);
         } else if (!note->fixed()) {
             note->undoChangeProperty(Pid::HEAD_GROUP, int(drumset->noteHead(pitch)));
             int line = drumset->line(pitch);
@@ -627,7 +629,7 @@ void LayoutMeasure::getNextMeasure(const LayoutOptions& options, LayoutContext& 
                 ctx.measureNo = mno;
             }
         } else if (toMeasure(ctx.curMeasure)->isMMRest()) {
-            qDebug("mmrest: no %d += %d", ctx.measureNo, toMeasure(ctx.curMeasure)->mmRestCount());
+            LOGD("mmrest: no %d += %d", ctx.measureNo, toMeasure(ctx.curMeasure)->mmRestCount());
             ctx.measureNo += toMeasure(ctx.curMeasure)->mmRestCount() - 1;
         }
     }
@@ -784,8 +786,6 @@ void LayoutMeasure::getNextMeasure(const LayoutOptions& options, LayoutContext& 
         }
     }
 
-    measure->computeTicks();
-
     for (Segment& segment : measure->segments()) {
         if (segment.isBreathType()) {
             for (EngravingItem* e : segment.elist()) {
@@ -825,6 +825,9 @@ void LayoutMeasure::getNextMeasure(const LayoutOptions& options, LayoutContext& 
         }
         s.createShapes();
     }
+
+    measure->computeTicks(); // Must be called *after* Segment::createShapes() because it relies on the
+    // Segment::visible() property, which is determined by Segment::createShapes().
 
     ctx.tick += measure->ticks();
 }

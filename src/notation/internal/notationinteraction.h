@@ -229,7 +229,7 @@ public:
     void navigateToLyrics(MoveDirection direction) override;
     void navigateToLyricsVerse(MoveDirection direction) override;
 
-    void nagivateToNextSyllable() override;
+    void navigateToNextSyllable() override;
 
     void navigateToNearHarmony(MoveDirection direction, bool nearNoteOrRest) override;
     void navigateToHarmonyInNearMeasure(MoveDirection direction) override;
@@ -322,7 +322,7 @@ private:
     bool dropCanvas(EngravingItem* e);
     void resetDropElement();
 
-    void selectInstrument(Ms::InstrumentChange* instrumentChange);
+    bool selectInstrument(Ms::InstrumentChange* instrumentChange);
 
     void applyDropPaletteElement(Ms::Score* score, Ms::EngravingItem* target, Ms::EngravingItem* e, Qt::KeyboardModifiers modifiers,
                                  PointF pt = PointF(), bool pasteMode = false);

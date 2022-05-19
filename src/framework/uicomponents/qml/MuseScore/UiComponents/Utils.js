@@ -58,18 +58,35 @@ function ensureContentVisible(flickable, contentRect, margins) {
     }
 }
 
-function getItem(model, row) {
-    if (Boolean(model.get)) {
-        return model.get(row)
+function getItem(model, index) {
+    if (!Boolean(model)) {
+        return null
     }
 
-    return model[row]
+    if (Boolean(model.get)) {
+        return model.get(index)
+    }
+
+    return model[index]
+}
+
+function getItemValue(model, index, roleName, def) {
+    var item = getItem(model, index)
+    if (!Boolean(item)) {
+        return def
+    }
+
+    if (item[roleName] !== undefined) {
+        return item[roleName]
+    }
+
+    return item
 }
 
 function makeMnemonicText(text) {
     var index = text.indexOf("&")
     if (index !== -1) {
-        if (index === text.lenght - 1) {
+        if (index === text.length - 1) {
             text = removeAmpersands(text)
         } else {
             text = text.replace(text.substr(index, 2), ("<u>" + text.substr(index + 1, 1) + "</u>"))

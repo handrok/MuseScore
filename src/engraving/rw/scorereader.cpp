@@ -124,7 +124,7 @@ Err ScoreReader::loadMscz(Ms::MasterScore* masterScore, const mu::engraving::Msc
             Read400::read400(partScore, xml, ctx);
 
             partScore->linkMeasures(masterScore);
-            ex->setTracksMapping(xml.tracks());
+            ex->setTracksMapping(xml.context()->tracks());
 
             ex->setName(excerptName);
 
@@ -210,7 +210,7 @@ Err ScoreReader::doRead(MasterScore* score, XmlReader& e, ReadContext& ctx)
             score->setMscoreRevision(e.readIntHex());
         } else if (tag == "Score") {
             if (!Read400::readScore400(score, e, ctx)) {
-                if (e.error() == QXmlStreamReader::CustomError) {
+                if (e.error() == XmlStreamReader::CustomError) {
                     return Err::FileCriticalCorrupted;
                 }
                 return Err::FileBadFormat;

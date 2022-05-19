@@ -49,6 +49,8 @@
 
 #include "masterscore.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 using namespace mu::engraving::rw;
@@ -260,18 +262,6 @@ const std::vector<BarLineTableItem> BarLine::barLineTable {
     { BarLineType::HEAVY,            SymNames::userNameForSymId(SymId::barlineHeavy) },
     { BarLineType::DOUBLE_HEAVY,     SymNames::userNameForSymId(SymId::barlineHeavyHeavy) },
 };
-
-//---------------------------------------------------------
-//   barLineTableItem
-//---------------------------------------------------------
-
-const BarLineTableItem* BarLine::barLineTableItem(unsigned i)
-{
-    if (i >= barLineTable.size()) {
-        return 0;
-    }
-    return &barLineTable[i];
-}
 
 //---------------------------------------------------------
 //   userTypeName
@@ -1424,7 +1414,7 @@ void BarLine::add(EngravingItem* e)
         e->added();
         break;
     default:
-        qDebug("BarLine::add() not impl. %s", e->typeName());
+        LOGD("BarLine::add() not impl. %s", e->typeName());
         delete e;
         break;
     }
@@ -1441,13 +1431,13 @@ void BarLine::remove(EngravingItem* e)
     case ElementType::SYMBOL:
     case ElementType::IMAGE:
         if (!_el.remove(e)) {
-            qDebug("BarLine::remove(): cannot find %s", e->typeName());
+            LOGD("BarLine::remove(): cannot find %s", e->typeName());
         } else {
             e->removed();
         }
         break;
     default:
-        qDebug("BarLine::remove() not impl. %s", e->typeName());
+        LOGD("BarLine::remove() not impl. %s", e->typeName());
         return;
     }
 }
@@ -1537,7 +1527,7 @@ PropertyValue BarLine::propertyDefault(Pid propertyId) const
 {
     switch (propertyId) {
     case Pid::BARLINE_TYPE:
-// dynamic default values are a bad idea: writing to xml the value maybe ommited resulting in
+// dynamic default values are a bad idea: writing to xml the value maybe omitted resulting in
 //    wrong values on read (as the default may be different on read)
 //                  if (segment() && segment()->measure() && !segment()->measure()->nextMeasure())
 //                        return QVariant::fromValue(BarLineType::END);

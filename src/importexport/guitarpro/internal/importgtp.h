@@ -129,7 +129,7 @@ protected:
 
     // note effect bit masks
     static const uchar EFFECT_BEND = 0x1;
-    static const uchar EFFECT_STACATTO = 0x1;
+    static const uchar EFFECT_STACCATO = 0x1;
     static const uchar EFFECT_HAMMER = 0x2;
     static const uchar EFFECT_PALM_MUTE = 0x2;
     static const uchar EFFECT_TREMOLO = 0x4;
@@ -367,6 +367,7 @@ class GuitarPro5 : public GuitarPro
     void readMeasures(int startingTempo);
     Fraction readBeat(const Fraction& tick, int voice, Measure* measure, int staffIdx, Tuplet** tuplets, bool mixChange);
     bool readNoteEffects(Note*);
+    float naturalHarmonicFromFret(int fret);
 
 public:
     GuitarPro5(MasterScore* s, int v)

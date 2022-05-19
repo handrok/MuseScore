@@ -33,6 +33,7 @@
 
 #include "libmscore/engravingitem.h"
 #include "libmscore/page.h"
+#include "libmscore/system.h"
 #include "libmscore/durationtype.h"
 #include "libmscore/mscore.h"
 #include "libmscore/masterscore.h"
@@ -58,6 +59,7 @@
 
 namespace mu::notation {
 using Page = Ms::Page;
+using System = Ms::System;
 using EngravingItem = Ms::EngravingItem;
 using ElementType = Ms::ElementType;
 using PropertyValue = engraving::PropertyValue;
@@ -484,10 +486,6 @@ struct LoopBoundaries
 {
     int loopInTick = 0;
     int loopOutTick = 0;
-
-    RectF loopInRect = {};
-    RectF loopOutRect = {};
-
     bool visible = false;
 
     bool isNull() const
@@ -501,8 +499,6 @@ struct LoopBoundaries
 
         equals &= loopInTick == boundaries.loopInTick;
         equals &= loopOutTick == boundaries.loopOutTick;
-        equals &= loopInRect == boundaries.loopInRect;
-        equals &= loopOutRect == boundaries.loopOutRect;
         equals &= visible == boundaries.visible;
 
         return equals;

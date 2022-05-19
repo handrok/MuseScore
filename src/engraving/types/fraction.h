@@ -24,6 +24,7 @@
 #define MU_ENGRAVING_FRACTION_H
 
 #include <cstdint>
+#include <numeric>
 
 #include <QString>
 
@@ -32,30 +33,6 @@
 // everything contained in .h file for performance reasons
 
 namespace mu::engraving {
-//---------------------------------------------------------
-//   gcd
-//    greatest common divisor. always returns a positive val
-//    however, since int / uint = uint by C++ rules,
-//    return int to avoid accidental implicit unsigned cast
-//---------------------------------------------------------
-
-inline int64_t gcd(int64_t a, int64_t b)
-{
-    int64_t bp;
-    if (b > a) {
-        bp = b;
-        b = a;
-        a = bp;
-    }                                       // Saves one % if true
-    while (b != 0) {
-        bp = b;
-        b = a % b;
-        a = bp;
-    }
-
-    return a >= 0 ? a : -a;
-}
-
 class Fraction
 {
     // ensure 64 bit to avoid overflows in comparisons
@@ -124,15 +101,20 @@ public:
 
     void reduce()
     {
-        const int64_t g = gcd(m_numerator, m_denominator);
-        m_numerator /= g;
-        m_denominator /= g;
+        const int64_t g = std::gcd(m_numerator, m_denominator);
+        if (g) {
+            m_numerator /= g;
+            m_denominator /= g;
+        }
     }
 
     Fraction reduced() const
     {
-        const int64_t g = gcd(m_numerator, m_denominator);
-        return Fraction(static_cast<int>(m_numerator / g), static_cast<int>(m_denominator / g));
+        const int64_t g = std::gcd(m_numerator, m_denominator);
+        if (g) {
+            return Fraction(static_cast<int>(m_numerator / g), static_cast<int>(m_denominator / g));
+        }
+        return Fraction(m_numerator, m_denominator);
     }
 
     // comparison
@@ -174,10 +156,12 @@ public:
         if (m_denominator == val.m_denominator) {
             m_numerator += val.m_numerator;        // Common enough use case to be handled separately for efficiency
         } else {
-            const int64_t g = gcd(m_denominator, val.m_denominator);
-            const int64_t m1 = val.m_denominator / g;       // This saves one division over straight lcm
-            m_numerator = m_numerator * m1 + val.m_numerator * (m_denominator / g);
-            m_denominator = m1 * m_denominator;
+            const int64_t g = std::gcd(m_denominator, val.m_denominator);
+            if (g) {
+                const int64_t m1 = val.m_denominator / g;       // This saves one division over straight lcm
+                m_numerator = m_numerator * m1 + val.m_numerator * (m_denominator / g);
+                m_denominator = m1 * m_denominator;
+            }
         }
         return *this;
     }
@@ -187,10 +171,12 @@ public:
         if (m_denominator == val.m_denominator) {
             m_numerator -= val.m_numerator;       // Common enough use case to be handled separately for efficiency
         } else {
-            const int64_t g = gcd(m_denominator, val.m_denominator);
-            const int64_t m1 = val.m_denominator / g;       // This saves one division over straight lcm
-            m_numerator = m_numerator * m1 - val.m_numerator * (m_denominator / g);
-            m_denominator = m1 * m_denominator;
+            const int64_t g = std::gcd(m_denominator, val.m_denominator);
+            if (g) {
+                const int64_t m1 = val.m_denominator / g;       // This saves one division over straight lcm
+                m_numerator = m_numerator * m1 - val.m_numerator * (m_denominator / g);
+                m_denominator = m1 * m_denominator;
+            }
         }
         return *this;
     }
@@ -199,7 +185,7 @@ public:
     {
         m_numerator *= val.m_numerator;
         m_denominator *= val.m_denominator;
-        if (val.m_denominator != 1) {
+        if (abs(val.m_denominator) > 1) {
             reduce();                            // We should be free to fully reduce here
         }
         return *this;
@@ -240,7 +226,7 @@ public:
     Fraction operator/(const Fraction& v) const { return Fraction(*this) /= v; }
     Fraction operator/(int v)             const { return Fraction(*this) /= v; }
 
-    // convertion
+    // conversion
     int ticks() const
     {
         if (m_numerator == -1 && m_denominator == 1) {                  // HACK

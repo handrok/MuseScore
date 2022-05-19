@@ -68,6 +68,7 @@ void PlaybackController::init()
     globalContext()->currentProjectChanged().onNotify(this, [this]() {
         if (m_currentSequenceId != -1) {
             resetCurrentSequence();
+            return;
         }
 
         playback()->addSequence().onResolve(this, [this](const TrackSequenceId& sequenceId) {
@@ -313,21 +314,14 @@ void PlaybackController::onSelectionChanged()
     updateMuteStates();
 }
 
-void PlaybackController::togglePlay(const actions::ActionData& args)
+void PlaybackController::togglePlay()
 {
     if (!isPlayAllowed()) {
         LOGW() << "playback not allowed";
         return;
     }
 
-    if (interaction()->isElementEditStarted()) {
-        bool endEditElement = args.count() == 1 ? args.arg<bool>(0) : false;
-        if (!endEditElement) {
-            return;
-        }
-
-        interaction()->endEditElement();
-    }
+    interaction()->endEditElement();
 
     if (isPlaying()) {
         pause();

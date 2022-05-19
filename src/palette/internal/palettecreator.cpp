@@ -182,7 +182,8 @@ PalettePtr PaletteCreator::newBeamPalette()
 {
     PalettePtr sp = std::make_shared<Palette>(Palette::Type::Beam);
     sp->setName(QT_TRANSLATE_NOOP("palette", "Beam properties"));
-    sp->setGridSize(27, 40);
+    sp->setGridSize(35, 33);
+    sp->setMag(1.4);
     sp->setDrawGrid(true);
     sp->setVisible(false);
 
@@ -232,7 +233,7 @@ PalettePtr PaletteCreator::newKeySigPalette()
     PalettePtr sp = std::make_shared<Palette>(Palette::Type::KeySig);
     sp->setName(QT_TRANSLATE_NOOP("palette", "Key signatures"));
     sp->setMag(0.8);
-    sp->setGridSize(56, 50);
+    sp->setGridSize(56, 47);
     sp->setDrawGrid(true);
     sp->setYOffset(1.0);
 
@@ -301,14 +302,10 @@ PalettePtr PaletteCreator::newBarLinePalette(bool defaultPalette)
     sp->setDrawGrid(true);
 
     // bar line styles
-    for (unsigned i = 0;; ++i) {
-        const BarLineTableItem* bti = BarLine::barLineTableItem(i);
-        if (!bti) {
-            break;
-        }
+    for (const BarLineTableItem& bti : BarLine::barLineTable) {
         auto b = Factory::makeBarLine(gpaletteScore->dummy()->segment());
-        b->setBarLineType(bti->type);
-        sp->appendElement(b, BarLine::userTypeName(bti->type));
+        b->setBarLineType(bti.type);
+        sp->appendElement(b, BarLine::userTypeName(bti.type));
     }
 
     // bar line spans
@@ -337,8 +334,8 @@ PalettePtr PaletteCreator::newRepeatsPalette(bool defaultPalette)
 {
     PalettePtr sp = std::make_shared<Palette>(Palette::Type::Repeat);
     sp->setName(QT_TRANSLATE_NOOP("palette", "Repeats & jumps"));
-    sp->setMag(0.85);
-    sp->setGridSize(75, 28);
+    sp->setMag(0.75);
+    sp->setGridSize(100, 28);
     sp->setDrawGrid(true);
 
     struct MeasureRepeatInfo
@@ -382,18 +379,14 @@ PalettePtr PaletteCreator::newRepeatsPalette(bool defaultPalette)
         sp->appendElement(mk, markerTypeItem.name);
     }
 
-    for (int i = 0; i < jumpTypeTableSize(); i++) {
+    for (const JumpTypeTableItem& item : jumpTypeTable) {
         auto jp = makeElement<Jump>(gpaletteScore);
-        jp->setJumpType(jumpTypeTable[i].type);
-        sp->appendElement(jp, jumpTypeTable[i].userText);
+        jp->setJumpType(item.type);
+        sp->appendElement(jp, item.userText);
     }
 
-    for (unsigned i = 0;; ++i) {
-        const BarLineTableItem* bti = BarLine::barLineTableItem(i);
-        if (!bti) {
-            break;
-        }
-        switch (bti->type) {
+    for (const BarLineTableItem& bti : BarLine::barLineTable) {
+        switch (bti.type) {
         case BarLineType::START_REPEAT:
         case BarLineType::END_REPEAT:
         case BarLineType::END_START_REPEAT:
@@ -403,8 +396,8 @@ PalettePtr PaletteCreator::newRepeatsPalette(bool defaultPalette)
         }
 
         auto b = Factory::makeBarLine(gpaletteScore->dummy()->segment());
-        b->setBarLineType(bti->type);
-        PaletteCellPtr cell = sp->appendElement(b, BarLine::userTypeName(bti->type));
+        b->setBarLineType(bti.type);
+        PaletteCellPtr cell = sp->appendElement(b, BarLine::userTypeName(bti.type));
         cell->drawStaff = false;
     }
 
@@ -932,7 +925,7 @@ PalettePtr PaletteCreator::newClefsPalette(bool defaultPalette)
     PalettePtr sp = std::make_shared<Palette>(Palette::Type::Clef);
     sp->setName(QT_TRANSLATE_NOOP("palette", "Clefs"));
     sp->setMag(0.8);
-    sp->setGridSize(36, 50);
+    sp->setGridSize(36, 55);
     sp->setDrawGrid(true);
     sp->setYOffset(1.0);
 
@@ -987,6 +980,7 @@ PalettePtr PaletteCreator::newBagpipeEmbellishmentPalette()
     sp->setMag(0.8);
     sp->setYOffset(2.0);
     sp->setGridSize(55, 55);
+    sp->setDrawGrid(true);
     sp->setVisible(false);
 
     for (int i = 0; i < BagpipeEmbellishment::nEmbellishments(); ++i) {
@@ -1545,6 +1539,7 @@ PalettePtr PaletteCreator::newTimePalette(bool defaultPalette)
     sp->setName(QT_TRANSLATE_NOOP("palette", "Time signatures"));
     sp->setMag(.8);
     sp->setGridSize(42, 38);
+    sp->setDrawGrid(true);
 
     static std::vector<TS> defaultTimeSignatureList = {
         { 2,  4, TimeSigType::NORMAL, "2/4" },

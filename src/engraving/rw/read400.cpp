@@ -35,6 +35,8 @@
 
 #include "staffrw.h"
 
+#include "log.h"
+
 using namespace mu::engraving;
 using namespace mu::engraving::rw;
 using namespace Ms;
@@ -42,7 +44,7 @@ using namespace Ms;
 bool Read400::read400(Ms::Score* score, XmlReader& e, ReadContext& ctx)
 {
     if (!e.readNextStartElement()) {
-        qDebug("%s: xml file is empty", qPrintable(e.getDocName()));
+        LOGD("%s: xml file is empty", qPrintable(e.getDocName()));
         return false;
     }
 
@@ -64,7 +66,7 @@ bool Read400::read400(Ms::Score* score, XmlReader& e, ReadContext& ctx)
             }
         }
     } else {
-        qDebug("%s: invalid structure of xml file", qPrintable(e.getDocName()));
+        LOGD("%s: invalid structure of xml file", qPrintable(e.getDocName()));
         return false;
     }
 
@@ -87,7 +89,7 @@ bool Read400::readScore400(Ms::Score* score, XmlReader& e, ReadContext& ctx)
 
     std::vector<int> sysStaves;
     while (e.readNextStartElement()) {
-        e.setTrack(mu::nidx);
+        e.context()->setTrack(mu::nidx);
         const QStringRef& tag(e.name());
         if (tag == "Staff") {
             StaffRW::readStaff(score, e, ctx);
@@ -194,7 +196,7 @@ bool Read400::readScore400(Ms::Score* score, XmlReader& e, ReadContext& ctx)
             int strack = e.intAttribute("sTrack",   -1);
             int dtrack = e.intAttribute("dstTrack", -1);
             if (strack != -1 && dtrack != -1) {
-                e.tracks().insert({ strack, dtrack });
+                ctx.tracks().insert({ strack, dtrack });
             }
             e.skipCurrentElement();
         } else if (tag == "Score") {
@@ -212,18 +214,18 @@ bool Read400::readScore400(Ms::Score* score, XmlReader& e, ReadContext& ctx)
             } else if (s == "system") {
                 score->setLayoutMode(LayoutMode::SYSTEM);
             } else {
-                qDebug("layoutMode: %s", qPrintable(s));
+                LOGD("layoutMode: %s", qPrintable(s));
             }
         } else {
             e.unknown();
         }
     }
-    e.reconnectBrokenConnectors();
-    if (e.error() != QXmlStreamReader::NoError) {
-        qDebug("%s: xml read error at line %lld col %lld: %s",
-               qPrintable(e.getDocName()), e.lineNumber(), e.columnNumber(),
-               e.name().toUtf8().data());
-        if (e.error() == QXmlStreamReader::CustomError) {
+    ctx.reconnectBrokenConnectors();
+    if (e.error() != XmlStreamReader::NoError) {
+        LOGD("%s: xml read error at line %lld col %lld: %s",
+             qPrintable(e.getDocName()), e.lineNumber(), e.columnNumber(),
+             e.name().toUtf8().data());
+        if (e.error() == XmlStreamReader::CustomError) {
             MScore::lastError = e.errorString();
         } else {
             MScore::lastError = QObject::tr("XML read error at line %1, column %2: %3").arg(e.lineNumber()).arg(e.columnNumber()).arg(

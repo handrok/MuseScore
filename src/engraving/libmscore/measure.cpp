@@ -451,7 +451,7 @@ AccidentalVal Measure::findAccidental(Note* note) const
             }
         }
     }
-    qDebug("Measure::findAccidental: note not found");
+    LOGD("Measure::findAccidental: note not found");
     return AccidentalVal::NATURAL;
 }
 
@@ -503,7 +503,7 @@ AccidentalVal Measure::findAccidental(Segment* s, staff_idx_t staffIdx, int line
             }
         }
     }
-    qDebug("segment not found");
+    LOGD("segment not found");
     return AccidentalVal::NATURAL;
 }
 
@@ -551,12 +551,12 @@ qreal Measure::tick2pos(Fraction tck) const
 
 //---------------------------------------------------------
 //   showsMeasureNumberInAutoMode
-///    Wheter the measure will show measure number(s) when MeasureNumberMode is set to AUTO
+///    Whether the measure will show measure number(s) when MeasureNumberMode is set to AUTO
 //---------------------------------------------------------
 
 bool Measure::showsMeasureNumberInAutoMode()
 {
-    // Check wheter any measure number should be shown
+    // Check whether any measure number should be shown
     if (!score()->styleB(Sid::showMeasureNumber)) {
         return false;
     }
@@ -931,7 +931,7 @@ void Measure::add(EngravingItem* e)
         }
         while (s && s->rtick() == t) {
             if (!seg->isChordRestType() && (seg->segmentType() == s->segmentType())) {
-                qDebug("there is already a <%s> segment", seg->subTypeName());
+                LOGD("there is already a <%s> segment", seg->subTypeName());
                 return;
             }
             if (s->segmentType() > st) {
@@ -1096,7 +1096,7 @@ void Measure::remove(EngravingItem* e)
     case ElementType::MARKER:
     case ElementType::HBOX:
         if (!el().remove(e)) {
-            qDebug("Measure(%p)::remove(%s,%p) not found", this, e->typeName(), e);
+            LOGD("Measure(%p)::remove(%s,%p) not found", this, e->typeName(), e);
         }
         break;
 
@@ -1117,7 +1117,7 @@ void Measure::remove(EngravingItem* e)
                 }
             }
         }
-        qDebug("Measure::remove: %s %p not found", e->typeName(), e);
+        LOGD("Measure::remove: %s %p not found", e->typeName(), e);
         break;
 
     case ElementType::MEASURE:
@@ -1212,7 +1212,7 @@ void Measure::moveTicks(const Fraction& diff)
 void Measure::removeStaves(staff_idx_t sStaff, staff_idx_t eStaff)
 {
     for (Segment* s = first(); s; s = s->next()) {
-        for (staff_idx_t staff = eStaff - 1; staff >= sStaff; --staff) {
+        for (int staff = static_cast<int>(eStaff) - 1; staff >= static_cast<int>(sStaff); --staff) {
             s->removeStaff(staff);
         }
     }
@@ -1853,7 +1853,7 @@ EngravingItem* Measure::drop(EditData& data)
     break;
 
     default:
-        qDebug("Measure: cannot drop %s here", e->typeName());
+        LOGD("Measure: cannot drop %s here", e->typeName());
         delete e;
         break;
     }
@@ -2067,7 +2067,7 @@ void Measure::readAddConnector(ConnectorInfoReader* info, bool pasteMode)
 bool Measure::visible(staff_idx_t staffIdx) const
 {
     if (staffIdx >= score()->staves().size()) {
-        qDebug("Measure::visible: bad staffIdx: %zu", staffIdx);
+        LOGD("Measure::visible: bad staffIdx: %zu", staffIdx);
         return false;
     }
     if (system() && (system()->staves().empty() || !system()->staff(staffIdx)->show())) {
@@ -2139,9 +2139,13 @@ bool Measure::isFirstInSystem() const
 
 void Measure::scanElements(void* data, void (* func)(void*, EngravingItem*), bool all)
 {
+    size_t nstaves = score()->nstaves();
+    if (!all && nstaves == 0) {
+        return;
+    }
+
     MeasureBase::scanElements(data, func, all);
 
-    size_t nstaves = score()->nstaves();
     for (staff_idx_t staffIdx = 0; staffIdx < nstaves; ++staffIdx) {
         if (!all && !(visible(staffIdx) && score()->staff(staffIdx)->show())) {
             continue;
@@ -2204,7 +2208,7 @@ void Measure::connectTremolo()
                 for (Segment* ls = s->next(st); ls; ls = ls->next(st)) {
                     if (EngravingItem* element = ls->element(i)) {
                         if (!element->isChord()) {
-                            qDebug("cannot connect tremolo");
+                            LOGD("cannot connect tremolo");
                             continue;
                         }
                         Chord* nc = toChord(element);
@@ -2286,8 +2290,8 @@ void Measure::exchangeVoice(track_idx_t strack, track_idx_t dtrack, staff_idx_t 
         Spanner* sp = i->value;
         Fraction spStart = sp->tick();
         Fraction spEnd = spStart + sp->ticks();
-        qDebug("Start %d End %d Diff %d \n Measure Start %d End %d", spStart.ticks(), spEnd.ticks(), (spEnd - spStart).ticks(),
-               start.ticks(), end.ticks());
+        LOGD("Start %d End %d Diff %d \n Measure Start %d End %d", spStart.ticks(), spEnd.ticks(), (spEnd - spStart).ticks(),
+             start.ticks(), end.ticks());
         if (sp->isSlur() && (spStart >= start || spEnd < end)) {
             if (sp->track() == strack && spStart >= start) {
                 sp->setTrack(dtrack);
@@ -2327,7 +2331,7 @@ bool Measure::hasVoices(staff_idx_t staffIdx, Fraction stick, Fraction len) cons
 {
     Staff* st = score()->staff(staffIdx);
     if (st->isTabStaff(stick)) {
-        // TODO: tab staves use different rules for stem directin etc
+        // TODO: tab staves use different rules for stem direction etc
         // see for example https://musescore.org/en/node/308371
         // we should consider coming up with a more comprehensive solution
         // but for now, we are forcing measures on tab staves to be consider as a whole -
@@ -2706,7 +2710,7 @@ Measure* Measure::cloneMeasure(Score* sc, const Fraction& tick, TieMap* tieMap)
                                 nn->setTieBack(tie);
                                 tie->setEndNote(nn);
                             } else {
-                                qDebug("cloneMeasure: cannot find tie, track %zu", track);
+                                LOGD("cloneMeasure: cannot find tie, track %zu", track);
                             }
                         }
                     }
@@ -3317,7 +3321,7 @@ Fraction Measure::computeTicks()
 {
     Fraction minTick = ticks();
     if (minTick <= Fraction(0, 1)) {
-        qDebug("=====minTick %d measure %p", minTick.ticks(), this);
+        LOGD("=====minTick %d measure %p", minTick.ticks(), this);
     }
     Q_ASSERT(minTick > Fraction(0, 1));
 
@@ -3611,7 +3615,7 @@ qreal Measure::createEndBarLines(bool isLastMeasureInSystem)
         } else if (visibleInt == 1) {  // all (courtesy) clefs in the clef segment are not visible
             clefSeg->setVisible(false);
         } else { // should never happen
-            qDebug("Clef Segment without Clef elements at tick %d/%d", clefSeg->tick().numerator(), clefSeg->tick().denominator());
+            LOGD("Clef Segment without Clef elements at tick %d/%d", clefSeg->tick().numerator(), clefSeg->tick().denominator());
         }
         if ((wasVisible != clefSeg->visible()) && system()) {   // recompute the width only if necessary
             computeWidth(system()->minSysTicks(), layoutStretch());
@@ -4211,7 +4215,7 @@ void Measure::computeWidth(Segment* s, qreal x, bool isSystemHeader, Fraction mi
                     } else { // The following calculations are key to correct spacing of polyrythms
                         Fraction curTicks = s->shortestChordRest();
                         Fraction prevTicks = ps ? ps->shortestChordRest() : Fraction(0, 1);
-                        if (!prevHasAdjacent && prevTicks < curTicks) {
+                        if (ps && !prevHasAdjacent && prevTicks < curTicks) {
                             durStretch = durationStretch(prevTicks, minTicks) * (double(s->ticks().ticks()) / double(prevTicks.ticks()));
                         } else {
                             durStretch = durationStretch(curTicks, minTicks) * (double(s->ticks().ticks()) / double(curTicks.ticks()));
@@ -4538,11 +4542,11 @@ void Measure::stretchMeasureInPracticeMode(qreal targetWidth)
 //            }
 
             qreal spacing = s->spacing();
-            qreal widthWihoutSpacing = s->width() - spacing;
+            qreal widthWithoutSpacing = s->width() - spacing;
             qreal segmentStretch = s->stretch();
             x += spacing * (RealIsNull(segmentStretch) ? 1 : segmentStretch);
             s->rxpos() = x;
-            x += widthWihoutSpacing * (RealIsNull(segmentStretch) ? 1 : segmentStretch);
+            x += widthWithoutSpacing * (RealIsNull(segmentStretch) ? 1 : segmentStretch);
             s = s->nextEnabled();
         }
     }

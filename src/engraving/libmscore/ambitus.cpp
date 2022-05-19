@@ -36,6 +36,8 @@
 #include "system.h"
 #include "utils.h"
 
+#include "log.h"
+
 using namespace mu;
 using namespace mu::engraving;
 
@@ -364,7 +366,7 @@ void Ambitus::layout()
     //
     // NOTEHEADS Y POS
     //
-    // if pitch == INVALID_PITCH oor tpc == INALID_TPC, set to some default:
+    // if pitch == INVALID_PITCH or tpc == Tpc::TPC_INVALID, set to some default:
     // for use in palettes and when actual range cannot be calculated (new ambitus or no notes in staff)
     //
     qreal xAccidOffTop    = 0;
@@ -579,7 +581,7 @@ SymId Ambitus::noteHead() const
 
     SymId t = Note::noteHead(hg, _noteHeadGroup, ht);
     if (t == SymId::noSym) {
-        qDebug("invalid notehead %d/%d", int(_noteHeadGroup), int(_noteHeadType));
+        LOGD("invalid notehead %d/%d", int(_noteHeadGroup), int(_noteHeadType));
         t = Note::noteHead(0, NoteHeadGroup::HEAD_NORMAL, ht);
     }
     return t;

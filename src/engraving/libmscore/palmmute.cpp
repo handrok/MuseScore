@@ -115,7 +115,7 @@ PalmMute::PalmMute(EngravingItem* parent)
 void PalmMute::read(XmlReader& e)
 {
     if (score()->mscVersion() < 301) {
-        e.addSpanner(e.intAttribute("id", -1), this);
+        e.context()->addSpanner(e.intAttribute("id", -1), this);
     }
     while (e.readNextStartElement()) {
         if (readProperty(e.name(), e, Pid::LINE_WIDTH)) {
@@ -139,7 +139,7 @@ void PalmMute::read(XmlReader& e)
 /*
 void PalmMute::write(XmlWriter& xml) const
       {
-      if (!xml.canWrite(this))
+      if (!xml.context()->canWrite(this))
             return;
       xml.stag(this);
 

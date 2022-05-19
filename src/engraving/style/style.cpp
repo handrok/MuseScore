@@ -159,7 +159,7 @@ bool MStyle::readProperties(XmlReader& e)
             } else if (P_TYPE::HOOK_TYPE == type) {
                 set(idx, Ms::HookType(e.readElementText().toInt()));
             } else {
-                qFatal("unhandled type %d", int(type));
+                ASSERT_X("unhandled type " + QString::number(int(type)));
             }
             return true;
         }
@@ -227,7 +227,7 @@ bool MStyle::readTextStyleValCompat(XmlReader& e)
     const QString newFontStyleName = typeName.toString() + "FontStyle";
     const Sid sid = MStyle::styleIdx(newFontStyleName);
     if (sid == Sid::NOSTYLE) {
-        qWarning() << "readFontStyleValCompat: couldn't read text readFontStyle value:" << tag;
+        LOGW() << "readFontStyleValCompat: couldn't read text readFontStyle value:" << tag;
         return false;
     }
 
@@ -324,7 +324,7 @@ void MStyle::read(XmlReader& e, compat::ReadChordListHook* readChordListHook)
 
 bool MStyle::write(QIODevice* device)
 {
-    XmlWriter xml(nullptr, device);
+    XmlWriter xml(device);
     xml.writeHeader();
     xml.startObject("museScore version=\"" MSC_VERSION "\"");
     save(xml, false);
@@ -357,7 +357,12 @@ void MStyle::save(XmlWriter& xml, bool optimize)
             }
             xml.tag(st.name(), TConv::toXml(a));
         } else {
-            xml.tag(st.name(), value(idx).toQVariant());
+            PropertyValue val = value(idx);
+            //! NOTE for compatibility
+            if (val.isEnum()) {
+                val = val.value<int>();
+            }
+            xml.tagProperty(st.name(), val);
         }
     }
 
