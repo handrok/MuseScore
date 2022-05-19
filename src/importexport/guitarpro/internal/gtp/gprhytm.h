@@ -1,6 +1,8 @@
 #ifndef GPRHYTM_H
 #define GPRHYTM_H
 
+#include <utility>
+
 namespace Ms {
 class GPRhytm
 {

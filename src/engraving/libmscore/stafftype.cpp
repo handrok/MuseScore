@@ -1240,7 +1240,7 @@ bool StaffType::readConfigFile(const QString& fileName)
         {
 //            extern const char* resourcePath();
             QString rpath = resourcePath();
-            path = rpath + QString("/fonts_tablature.xml");
+            path = rpath + QString("/Fonts/fonts_tablature.xml");
         }
 #else
         path = ":/fonts/fonts_tablature.xml";

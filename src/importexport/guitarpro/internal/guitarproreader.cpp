@@ -21,17 +21,20 @@
  */
 #include "guitarproreader.h"
 
+#include <io/file.hpp>
+
 #include "libmscore/masterscore.h"
 #include "notation/notationerrors.h"
 
 namespace Ms {
-extern Score::FileError importGTP(MasterScore*, const QString& name);
+extern Score::FileError importGTP(MasterScore*, xtz::io::IODevice* d);
 }
 
 using namespace mu::iex::guitarpro;
 
 mu::Ret GuitarProReader::read(Ms::MasterScore* score, const io::path& path, const Options&)
 {
-    Ms::Score::FileError err = Ms::importGTP(score, path.toQString());
-    return mu::notation::scoreFileErrorToRet(err, path);
+//    Ms::Score::FileError err = Ms::importGTP(score, path.toQString());
+//    return mu::notation::scoreFileErrorToRet(err, path);
+    return mu::Ret();
 }

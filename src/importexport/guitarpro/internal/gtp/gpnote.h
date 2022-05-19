@@ -5,6 +5,8 @@
 #include <memory>
 #include <bitset>
 
+#include <QString>
+
 #include "inoteproperty.h"
 
 namespace Ms {

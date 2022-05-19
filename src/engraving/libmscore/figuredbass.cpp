@@ -1675,7 +1675,7 @@ bool FiguredBass::readConfigFile(const QString& fileName)
         {
 //            extern const char* resourcePath();
             QString rpath = resourcePath();
-            path = rpath + QString("/fonts_figuredbass.xml");
+            path = rpath + QString("/Fonts/fonts_figuredbass.xml");
         }
 #else
         path = ":/fonts/fonts_figuredbass.xml";

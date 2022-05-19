@@ -2,6 +2,8 @@
 
 #include <set>
 
+#include <QList>
+
 #include "global/log.h"
 #include "types/constants.h"
 

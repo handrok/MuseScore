@@ -619,7 +619,7 @@ int GuitarPro4::convertGP4SlideNum(int sl)
 //   read
 //---------------------------------------------------------
 
-bool GuitarPro4::read(QFile* fp)
+bool GuitarPro4::read(xtz::io::IODevice* fp)
 {
     f      = fp;
     curPos = 30;

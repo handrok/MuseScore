@@ -25,6 +25,8 @@
 
 #include <QDomNode>
 
+#include <io/file.hpp>
+
 #include "gtp/gp67dombuilder.h"
 #include "libmscore/score.h"
 #include "libmscore/vibrato.h"
@@ -52,7 +54,9 @@ static constexpr int GP_INVALID_KEYSIG = 127;
 static constexpr int GP_VOLTA_BINARY = 1;
 static constexpr int GP_VOLTA_FLAGS = 2;
 
-Score::FileError importGTP(Score* score, const QString& filename, const char* data, unsigned int data_len);
+
+//Score::FileError importGTP(Score* score, xtz::io::IODevice* source);
+
 
 enum class Repeat : char;
 
@@ -198,7 +202,8 @@ protected:
     std::vector<Ottava*> ottava;
     Hairpin** hairpins;
     MasterScore* score;
-    QFile* f;
+//    QFile* f;
+    xtz::io::IODevice* f;
     int curPos;
     int previousTempo;
     int previousDynamic;
@@ -277,7 +282,7 @@ public:
 
     GuitarPro(MasterScore*, int v);
     virtual ~GuitarPro();
-    virtual bool read(QFile*) = 0;
+    virtual bool read(xtz::io::IODevice*) = 0;
     QString error(GuitarProError n) const { return QString(errmsg[int(n)]); }
 };
 
@@ -294,7 +299,7 @@ protected:
 public:
     GuitarPro1(MasterScore* s, int v)
         : GuitarPro(s, v) {}
-    virtual bool read(QFile*);
+    virtual bool read(xtz::io::IODevice*);
 };
 
 //---------------------------------------------------------
@@ -306,7 +311,7 @@ class GuitarPro2 : public GuitarPro1
 public:
     GuitarPro2(MasterScore* s, int v)
         : GuitarPro1(s, v) {}
-    virtual bool read(QFile*);
+    virtual bool read(xtz::io::IODevice*);
 };
 
 //---------------------------------------------------------
@@ -320,7 +325,7 @@ class GuitarPro3 : public GuitarPro1
 public:
     GuitarPro3(MasterScore* s, int v)
         : GuitarPro1(s, v) {}
-    virtual bool read(QFile*);
+    virtual bool read(xtz::io::IODevice*);
 };
 
 //---------------------------------------------------------
@@ -340,7 +345,7 @@ class GuitarPro4 : public GuitarPro
 public:
     GuitarPro4(MasterScore* s, int v)
         : GuitarPro(s, v) {}
-    virtual bool read(QFile*);
+    virtual bool read(xtz::io::IODevice*);
 };
 
 //---------------------------------------------------------
@@ -366,7 +371,7 @@ class GuitarPro5 : public GuitarPro
 public:
     GuitarPro5(MasterScore* s, int v)
         : GuitarPro(s, v) {}
-    virtual bool read(QFile*);
+    virtual bool read(xtz::io::IODevice*);
 };
 
 //---------------------------------------------------------
@@ -426,7 +431,7 @@ public:
         : GuitarPro(s, 6) {}
     GuitarPro6(MasterScore* s, int v)
         : GuitarPro(s, v) {}
-    bool read(QFile*) override;
+    bool read(xtz::io::IODevice*) override;
 };
 
 class GuitarPro7 : public GuitarPro6
@@ -436,7 +441,7 @@ class GuitarPro7 : public GuitarPro6
 public:
     GuitarPro7(MasterScore* s)
         : GuitarPro6(s, 7) {}
-    bool read(QFile*) override;
+    bool read(xtz::io::IODevice*) override;
 };
 } // namespace Ms
 #endif

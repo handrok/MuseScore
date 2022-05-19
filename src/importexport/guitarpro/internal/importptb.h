@@ -21,6 +21,8 @@
  */
 #pragma once
 
+#include <io/file.hpp>
+
 #include <libmscore/score.h>
 #include <libmscore/mscore.h>
 #include <types/fraction.h>
@@ -41,7 +43,7 @@ class PalmMute;
 
 class PowerTab
 {
-    QFile* _file;
+    xtz::io::IODevice* _file;
     MasterScore* score;
 
     bool              readBoolean();
@@ -388,7 +390,7 @@ class PowerTab
     void addPalmMute(Chord*);
 
 public:
-    PowerTab(QFile* f, MasterScore* s)
+    PowerTab(xtz::io::IODevice* f, MasterScore* s)
         : _file(f), score(s) {}
     Score::FileError read();
 };

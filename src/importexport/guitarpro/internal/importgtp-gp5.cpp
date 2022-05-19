@@ -22,6 +22,8 @@
 
 #include "importgtp.h"
 
+#include <global/log.h>
+
 #include "libmscore/factory.h"
 #include "libmscore/arpeggio.h"
 #include "libmscore/articulation.h"
@@ -49,6 +51,7 @@
 #include "libmscore/rehearsalmark.h"
 #include "libmscore/rest.h"
 #include "libmscore/segment.h"
+#include "libmscore/slide.h"
 #include "libmscore/slur.h"
 #include "libmscore/staff.h"
 #include "libmscore/stafftext.h"
@@ -724,7 +727,7 @@ void GuitarPro5::readMeasures(int /*startingTempo*/)
 //   read
 //---------------------------------------------------------
 
-bool GuitarPro5::read(QFile* fp)
+bool GuitarPro5::read(xtz::io::IODevice* fp)
 {
     f = fp;
 

@@ -40,11 +40,15 @@ namespace Ms {
 //   read
 //---------------------------------------------------------
 
-bool GuitarPro7::read(QFile* fp)
+bool GuitarPro7::read(xtz::io::IODevice* fp)
 {
     f = fp;
     previousTempo = -1;
-    MQZipReader zip(fp);
+    
+    QByteArray data = fp->readAll().toQByteArrayCopy();
+    QBuffer qbuffer(&data);
+    
+    MQZipReader zip(&qbuffer);
     QByteArray fileData = zip.fileData("Content/score.gpif");
     zip.close();
     readGpif(&fileData);

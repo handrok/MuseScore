@@ -1,6 +1,8 @@
 #ifndef GPSCORE_H
 #define GPSCORE_H
 
+#include <QString>
+
 namespace Ms {
 class GPScore
 {

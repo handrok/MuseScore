@@ -24,6 +24,8 @@
 
 #include <memory>
 
+#include <QVariant>
+
 #include "ret.h"
 #include "io/path.h"
 

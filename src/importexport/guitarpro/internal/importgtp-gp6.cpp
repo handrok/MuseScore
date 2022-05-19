@@ -468,11 +468,11 @@ void GuitarPro6::readGPX(QByteArray* buffer)
 //   read
 //---------------------------------------------------------
 
-bool GuitarPro6::read(QFile* fp)
+bool GuitarPro6::read(xtz::io::IODevice* fp)
 {
     f = fp;
     previousTempo = -1;
-    QByteArray buffer = fp->readAll();
+    QByteArray buffer = fp->readAll().toQByteArrayCopy();
 
     // decompress and read files contained within GPX file
     readGPX(&buffer);
