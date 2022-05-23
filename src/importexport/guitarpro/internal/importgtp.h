@@ -25,7 +25,7 @@
 
 #include <QDomNode>
 
-#include <io/file.hpp>
+#include <io/file.h>
 
 #include "gtp/gp67dombuilder.h"
 #include "libmscore/score.h"

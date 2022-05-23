@@ -21,7 +21,7 @@
  */
 #pragma once
 
-#include <io/file.hpp>
+#include <io/file.h>
 
 #include <libmscore/score.h>
 #include <libmscore/mscore.h>
