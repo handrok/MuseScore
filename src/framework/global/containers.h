@@ -32,6 +32,14 @@
 
 //! NOTE useful functions for containers
 
+namespace std {
+  template<> struct hash<QString> {
+    std::size_t operator()(const QString& s) const noexcept {
+      return (size_t) qHash(s);
+    }
+  };
+}
+
 namespace mu {
 static constexpr size_t nidx = static_cast<size_t>(-1);
 

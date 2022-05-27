@@ -223,6 +223,9 @@ const char* ScoreFont::fallbackTextFont()
 
 void ScoreFont::load()
 {
+    qreal size = 20.0 * MScore::pixelRatio;
+    m_font.setPointSizeF(size);
+    
     QString facePath = m_fontPath + m_filename;
     if (-1 == fontProvider()->addApplicationFont(m_family, facePath)) {
         LOGE() << "fatal error: cannot load internal font: " << facePath;
@@ -728,8 +731,6 @@ void ScoreFont::draw(SymId id, Painter* painter, const SizeF& mag, const PointF&
     }
 
     painter->save();
-    qreal size = 20.0 * MScore::pixelRatio;
-    m_font.setPointSizeF(size);
     painter->scale(mag.width(), mag.height());
     painter->setFont(m_font);
     painter->drawSymbol(PointF(pos.x() / mag.width(), pos.y() / mag.height()), symCode(id));

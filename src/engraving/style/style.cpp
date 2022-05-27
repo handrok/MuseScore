@@ -266,7 +266,7 @@ bool MStyle::read(IODevice* device, bool ign)
     return true;
 }
 
-bool MStyle::isValid(QIODevice* device)
+bool MStyle::isValid(mu::io::IODevice* device)
 {
     XmlReader e(device);
     while (e.error() == XmlReader::Error::NoError && e.readNextStartElement()) {
